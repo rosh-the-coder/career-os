@@ -1,0 +1,25 @@
+UX Engineer
+Dublin Product Studio
+
+Location: Dublin, Ireland (Hybrid)
+Employment: Permanent
+Salary: €45,000 – €60,000
+
+About the role
+We are hiring a UX Engineer to bridge product design and frontend implementation.
+
+Responsibilities
+- Design and build accessible React interfaces
+- Maintain design systems and component libraries
+- Partner with product and engineering on rapid prototyping
+- Improve usability through research-informed iteration
+
+Requirements
+- Strong React and TypeScript
+- Figma fluency
+- Accessibility (WCAG) awareness
+- Experience with design systems
+- 3+ years commercial experience preferred
+- Nice to have: Next.js, Tailwind CSS
+
+We cannot sponsor visas at this time. Candidates must have the right to work in Ireland.

@@ -1,0 +1,293 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  name        String
+  authUserId  String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  settings       Settings?
+  careerProfiles CareerProfile[]
+  experiences    Experience[]
+  projects       Project[]
+  skills         Skill[]
+  evidenceItems  EvidenceItem[]
+  jobs           Job[]
+  applications   Application[]
+  resumeVersions ResumeVersion[]
+}
+
+model Settings {
+  id                         String  @id @default(cuid())
+  userId                     String  @unique
+  user                       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  location                   String  @default("Dublin, Ireland")
+  currentPermission          String  @default("Stamp 1G")
+  permissionValidUntil       String  @default("2027-09")
+  permissionRenewableUntil   String  @default("2028-09")
+  canWorkFullTimeNow         Boolean @default(true)
+  requiresEmploymentPermitNow Boolean @default(false)
+  requiresFutureSponsorship  Boolean @default(true)
+  preferredLongTermPath      String  @default("Critical Skills Employment Permit")
+  salaryFloorEur             Int     @default(40000)
+  salaryFloorSoft            Boolean @default(true)
+  includeFallbackVideoRoles  Boolean @default(false)
+  allowedLocationsJson       String  @default("[\"Dublin\",\"County Dublin\",\"Ireland\",\"Remote within Ireland\",\"Hybrid within commuting distance\"]")
+  excludedLocationsJson      String  @default("[\"UK only\",\"US only\",\"EU residence required outside Ireland\"]")
+  preferredEmploymentTypesJson String @default("[\"Permanent\",\"Fixed-term\"]")
+  excludedEmploymentTypesJson  String @default("[\"Unpaid\",\"Commission only\"]")
+  portfolioUrl               String  @default("https://theonlyrosh.com/")
+  githubUrl                  String  @default("https://github.com/rosh-the-coder")
+  linkedinUrl                String  @default("https://www.linkedin.com/in/roshan-najar-0556711b4/")
+  phone                      String  @default("+353 838501604")
+  contactEmail               String  @default("theonlyroshn@gmail.com")
+  instagramUrl               String  @default("")
+  dailyBatchTarget           Int     @default(25)
+  noticePeriod               String  @default("Immediate")
+  employmentStatus           String  @default("between_roles")
+  layoffDate                 String  @default("2026-07-17")
+}
+
+model CareerProfile {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key             String
+  name            String
+  positioning     String
+  keywordsJson    String
+  evidenceOrderJson String
+  isDefault       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  resumeVersions ResumeVersion[]
+  jobScores      JobScore[]
+
+  @@unique([userId, key])
+}
+
+model Experience {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company          String
+  umbrellaTitle    String
+  location         String?
+  startDate        String
+  endDate          String?
+  isCurrent        Boolean  @default(false)
+  alternativeTitlesJson String @default("{}")
+  themesJson       String
+  bulletsJson      String   @default("[]")
+  verified         Boolean  @default(true)
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  evidenceItems EvidenceItem[]
+}
+
+model Project {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key             String
+  name            String
+  type            String
+  status          String
+  primaryRole     String
+  stackJson       String
+  featuresJson    String
+  outcomesJson    String
+  useAsEvidenceForJson String
+  constraintsJson String   @default("[]")
+  verified        Boolean  @default(true)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  evidenceItems EvidenceItem[]
+
+  @@unique([userId, key])
+}
+
+model Skill {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  category  String
+  verified  Boolean  @default(true)
+  keywordsJson String @default("[]")
+
+  @@unique([userId, name])
+}
+
+model EvidenceItem {
+  id                 String   @id @default(cuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type               String
+  title              String
+  description        String
+  source             String
+  verified           Boolean  @default(true)
+  confidence         String   @default("high")
+  allowedProfilesJson String
+  keywordsJson       String
+  prohibitedClaimsJson String  @default("[]")
+  notes              String?
+  isEstimate         Boolean  @default(false)
+  needsReview        Boolean  @default(false)
+  experienceId       String?
+  experience         Experience? @relation(fields: [experienceId], references: [id])
+  projectId          String?
+  project            Project? @relation(fields: [projectId], references: [id])
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  metrics Metric[]
+}
+
+model Metric {
+  id            String  @id @default(cuid())
+  evidenceId    String
+  evidence      EvidenceItem @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+  label         String
+  value         Float?
+  valueText     String?
+  unit          String  @default("")
+  exact         Boolean @default(true)
+  source        String
+  approvedForCV Boolean @default(false)
+  isEstimate    Boolean @default(false)
+  needsReview   Boolean @default(false)
+}
+
+model Job {
+  id                    String   @id @default(cuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  source                String
+  sourceJobId           String?
+  url                   String?
+  company               String
+  title                 String
+  location              String?
+  country               String?
+  remoteType            String?
+  employmentType        String?
+  salaryMin             Int?
+  salaryMax             Int?
+  salaryCurrency        String?
+  descriptionRaw        String
+  descriptionClean      String
+  postedAt              String?
+  closingAt             String?
+  collectedAt           DateTime @default(now())
+  requirementsJson      String   @default("[]")
+  responsibilitiesJson  String   @default("[]")
+  keywordsJson          String   @default("[]")
+  seniority             String?
+  yearsRequired         Int?
+  sponsorshipText       String?
+  workAuthorizationText String?
+  duplicateGroupId      String?
+  status                String   @default("new")
+  hardRejectReason      String?
+  softFlagsJson         String   @default("[]")
+  listingCategory       String   @default("ireland_core")
+  // ireland_core = daily Ireland/Dublin batch | eu_sponsorship = EU roles with visa sponsorship
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  score          JobScore?
+  resumeVersions ResumeVersion[]
+  applications   Application[]
+}
+
+model JobScore {
+  id                    String   @id @default(cuid())
+  jobId                 String   @unique
+  job                   Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  profileId             String?
+  profile               CareerProfile? @relation(fields: [profileId], references: [id])
+  totalScore            Int
+  skillsOverlap         Float
+  evidenceStrength      Float
+  projectRelevance      Float
+  seniorityFit          Float
+  currentEligibility    Float
+  longTermPermit        Float
+  locationFit           Float
+  salaryFit             Float
+  careerAlignment       Float
+  strengthsJson         String
+  gapsJson              String
+  eligibilityCurrent    String
+  eligibilityFuture     String
+  recommendedProjectsJson String
+  evidenceUsedJson      String
+  explanationJson       String
+  modelVersion          String?
+  scoredAt              DateTime @default(now())
+}
+
+model ResumeVersion {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId            String?
+  job              Job?     @relation(fields: [jobId], references: [id])
+  profileId        String
+  profile          CareerProfile @relation(fields: [profileId], references: [id])
+  pageLength       Int      @default(1)
+  contentJson      String
+  markdown         String
+  evidenceUsedJson String
+  validationJson   String
+  validationStatus String   @default("pending")
+  promptVersion    String   @default("v1")
+  modelVersion     String?
+  docxPath         String?
+  pdfPath          String?
+  fileName         String?
+  createdAt        DateTime @default(now())
+
+  applications Application[]
+}
+
+model Application {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId             String
+  job               Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  resumeVersionId   String?
+  resumeVersion     ResumeVersion? @relation(fields: [resumeVersionId], references: [id])
+  submittedAt       DateTime?
+  submissionChannel String?
+  status            String   @default("review_required")
+  followUpAt        DateTime?
+  recruiterName     String?
+  recruiterEmail    String?
+  notes             String?
+  interviewStagesJson String @default("[]")
+  salaryAsked       String?
+  referral          String?
+  interviewStage    String?  @default("none")
+  locationApplied   String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}

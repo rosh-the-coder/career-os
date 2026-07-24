@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-sans-loaded), "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display-loaded), "Fraunces", ui-serif, Georgia, serif;
+  --font-mono: var(--font-mono-loaded), "IBM Plex Mono", ui-monospace, monospace;
+
+  --color-ink: #e8e6e1;
+  --color-ink-muted: #9a968c;
+  --color-ink-faint: #6b675e;
+  --color-canvas: #0f0f0d;
+  --color-panel: #171714;
+  --color-panel-2: #1e1e1a;
+  --color-line: #2a2a24;
+  --color-accent: #c4f542;
+  --color-accent-dim: #8fb82e;
+  --color-warn: #e8b84a;
+  --color-danger: #e86a5a;
+  --color-info: #6db3f2;
+}
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-canvas text-ink antialiased;
+    font-family: var(--font-sans);
+    background-image:
+      radial-gradient(ellipse 80% 50% at 0% -20%, rgba(196, 245, 66, 0.06), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 0%, rgba(109, 179, 242, 0.04), transparent);
+    min-height: 100vh;
+  }
+
+  ::selection {
+    background: rgba(196, 245, 66, 0.25);
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+}

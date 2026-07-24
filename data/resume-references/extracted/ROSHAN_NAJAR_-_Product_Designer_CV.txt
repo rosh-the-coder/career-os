@@ -1,0 +1,105 @@
+ROSHAN NAJAR, Product Designer
+County Dublin, Ireland, +353 838501604, theonlyroshn@gmail.com
+LINKS LinkedIn, Portfolio Website, Instagram, Github
+PROFILE Product Designer with a strong engineering background - experienced in delivering web, mobile, and 
+immersive digital products from concept to launch. Skilled in UX research, interaction design, accessibility, 
+and rapid prototyping. Passionate about building tools that simplify complex workflows, with hands-on 
+experience using code and AI-assisted workflows to ship functioning products. Currently completed an 
+MSc in Creative Digital Media & UX with 2+ years of hands-on product design experience across 
+real-world, academic, and freelance projects.
+SKILLS UX Research & Usability 
+Testing
+Interaction Design
+Figma (Components & Auto 
+Layout)
+Responsive UI Design
+Accessibility Standards
+Design Systems
+Prototyping (Low–High 
+Fidelity)
+Frontend Fundamentals (HTML, 
+CSS, JavaScript, React, 
+TypeScript)
+AI-Assisted Prototyping & 
+Development
+SELECTED PROJECTS 
+Mar 2025 — Dec 2025 RedVelvetVault
+Designed and shipped a full-stack web platform enabling users to discover, explore, and engage with digital 
+artwork in virtual game-like 3D galleries.
+[Website LINK] [Show-reel LINK] [Project Report]
+Product Designer & Developer
+•  Led end-to-end UX process from research to final delivery, conducting usability testing with 50+ 
+users to validate navigation, onboarding, and interaction flows (81% rated the experience intuitive).
+•  Designed scalable UI components and user flows in Figma, establishing consistent visual hierarchy, 
+spacing, and accessibility standards across the platform.
+•  Built and implemented the final product using React, TypeScript, Firebase, and AI-assisted 
+development workflows (ChatGPT + Cursor), translating design directly into production-ready code.
+•  Collaborated between design and development decisions, balancing usability, performance,  and 
+real-world technical constraints.
+•  Shipped functional features including user authentication, content interaction, personalisation, and 
+real-time engagement tools.
+•  Applied accessibility-first principles to improve readability, contrast, and cognitive clarity across 
+complex workflows.
+PROFESSIONAL EXPERIENCE
+Oct 2024 — Present INDEPENDENT PRODUCT DESIGNER (FREELANCE)
+•  Created user-centered designs through detailed wireframing and prototyping.
+•  Produced interactive prototypes and high-fidelity mockups tailored for diverse digital environments.
+•  Executed usability testing to collect user insights, refining designs based on feedback.
+•  Facilitated workshops with stakeholders to ensure clarity and consensus on design goals.
+•  Applied design systems and accessibility standards to enhance user experience across all projects.
+Jan 2025 — Present PRODUCT DESIGN CONSULTANT (Content & Growth), TWO 
+BLOKES TRADING Dublin
+Two Blokes Trading is a finance-focused content brand with a growing digital product offering (Trevesto), 
+targeting retail investors. 
+•  Contributed to product growth and user engagement through end-to-end content design for Two 
+Blokes Trading’s app and brand ecosystem (including Trevesto)
+•  Produced 30+ long-form podcast episodes and 250+ short-form videos across YouTube, Instagram, 
+TikTok, LinkedIn, X, and web platforms.
+•  Designed and delivered 300+ digital assets aligned with brand positioning, SEO strategy, and 
+platform-specific user behaviours.
+•  Increased YouTube subscribers from 2.9K to 8.2K (+183%) and total views from 34.9K to 165.5K 
+(+374%) within 10 months while working two days per week.
+•  Collaborated with marketing to create SEO-driven, user-focused multimedia content, improving 
+engagement through clear CTAs and accessible cross-platform design.
+•  Worked closely with founders, marketers, and developers, incorporating feedback rapidly and 
+contributing design input during app development to align content with overall product strategy.
+Jul 2022 — Mar 2023 ARCHITECTURAL INTERN, ARCOP ASSOCIATES Bengaluru
+Arcop Associates Pvt Ltd is a multidisciplinary architecture and design firm known for large-scale 
+commercial, institutional, and urban development projects across India.
+•  Produced detailed technical drawings (plumbing, HV AC, lighting) aligned with design specifications 
+and regulatory standards, ensuring clarity between design intent and execution.
+•  Led 3D visualisations and high-fidelity presentation decks for 5+ major projects, improving 
+stakeholder understanding and decision-making (reported 60% increase in client clarity).
+•  Collaborated with multidisciplinary teams to translate technical constraints into clear, visually 
+communicative design solutions.
+•  Applied user-centred principles to spatial layouts, incorporating feedback to improve functionality 
+and usability of built environments.
+•  Contributed to structured documentation systems that improved workflow consistency and design 
+standardisation across projects.
+EDUCATION
+Sept 2024 — Mar 2026 MSc in Creative Digital Media and UX, Technological University 
+Dublin Dublin
+•   Authoring Principles
+•   Design Practice
+•   VR & AR Applications
+•   Information Modelling
+•   Production & Prototyping
+•   Project Definition & UX Treatment
+•   Social Media Applications
+•   User Interaction Design
+•   Major Project & Report
+Aug 2023 — Mar 2024 Executive PG in UI/UX [CredentialID - IPTIH2403279], Indian 
+Institute of Technology Roorkee Roorkee, India
+Jul 2018 — Nov 2023 Bachelor of Architecture, Manipal School of Architecture and 
+Planning Manipal, India
+TECHNICAL STACK Design Tools
+Figma, Sketch, InVision, Adobe Creative Cloud (Photoshop, After Effects, Premiere Pro), Framer
+Frontend Development
+HTML, CSS, JavaScript, TypeScript, React, Next.js, Ionic, Tailwind CSS, Three.js, GSAP, Motion.dev, 
+Unicorn Studio
+Backend & Data
+Firebase, PHP & MySQL, REST APIs , JSON, Node.js, Vercel
+Immersive Design
+Unity + C#, AR/VR Environments, 3D Interaction, Game UI Design
+Collaboration & Tools
+Git/GitHub, Trello, Miro, Stakeholder Communication, Workshop Facilitation

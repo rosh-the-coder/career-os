@@ -1,0 +1,97 @@
+ROSHAN NAJAR, Design Engineer
+County Dublin, Ireland, +353 838501604, theonlyroshn@gmail.com
+LINKS LinkedIn, Portfolio Website, Instagram, Github
+PROFILE Design Engineer with 2+ years of experience designing and implementing full-stack web applications 
+using React and TypeScript. Experienced in translating complex product requirements into scalable, 
+maintainable frontend architectures with strong attention to performance, accessibility, and visual 
+precision. Comfortable owning features end-to-end from interaction design and system thinking through 
+API integration and production deployment while leveraging AI-assisted workflows to accelerate iteration 
+without compromising code quality.
+SKILLS React & TypeScript (production 
+implementation)
+Component Architecture & 
+Reusable UI Systems
+API Integration & Real-Time 
+Data
+State Management (Zustand)
+Accessibility & Semantic UI
+Design-to-Code Translation 
+(Figma → Production)
+Performance & Frontend 
+Optimisation
+AI-Assisted Development 
+Workflows (Cursor)
+UX Research & Usability 
+Testing
+SELECTED PROJECTS 
+Mar 2025 — Dec 2025 RedVelvetVault
+Designed and implemented a full-stack web platform integrating React frontend with Unity WebGL 
+environments and real-time backend services.
+[Website LINK] [Show-reel LINK] [Project Report]
+Role: Design Engineer
+•  Architected reusable React components using TypeScript and modular state management (Zustand) 
+to ensure maintainability and scalability.
+•  Integrated Firebase Authentication, Firestore, and Storage to support user accounts, real-time content 
+updates, and secure media uploads.
+•  Structured the application into modular feature domains, separating UI components, state logic, and 
+backend integrations to maintain scalability and readability.
+•  Implemented real-time data syncing using onSnapshot() listeners for live content interaction.
+•  Structured cross-context communication between React and Unity WebGL via postMessage() for 
+gallery interactions.
+•  Applied performance optimisations to address WebGL memory constraints and large texture 
+handling.
+•  Translated Figma designs into pixel-accurate, responsive interfaces using Tailwind CSS.
+•  Ensured accessibility through semantic structure, contrast validation, and navigational clarity.
+PROFESSIONAL EXPERIENCE
+Oct 2024 — Present INDEPENDENT PRODUCT DESIGNER (FREELANCE)
+•  Designed and implemented frontend interfaces for client projects, translating product requirements 
+into responsive React-based components.
+•  Collaborated with stakeholders to define feature scope and iterate rapidly in short development 
+cycles.
+•  Applied design systems and accessibility standards to ensure production-ready delivery.
+Jan 2025 — Present PRODUCT DESIGN CONSULTANT (Content & Growth), TWO 
+BLOKES TRADING Dublin
+Two Blokes Trading is a finance-focused content brand with a growing digital product offering (Trevesto), 
+targeting retail investors. 
+•  Contributed to product growth and user engagement through end-to-end content design for Two 
+Blokes Trading’s app and brand ecosystem (including Trevesto)
+•  Produced 30+ long-form podcast episodes and 250+ short-form videos across YouTube, Instagram, 
+TikTok, LinkedIn, X, and web platforms.
+•  Designed and delivered 300+ digital assets aligned with brand positioning, SEO strategy, and 
+platform-specific user behaviours.
+•  Increased YouTube subscribers from 2.9K to 8.2K (+183%) and total views from 34.9K to 165.5K 
+(+374%) within 10 months while working two days per week.
+•  Collaborated with marketing to create SEO-driven, user-focused multimedia content, improving 
+engagement through clear CTAs and accessible cross-platform design.
+•  Worked closely with founders, marketers, and developers, incorporating feedback rapidly and 
+contributing design input during app development to align content with overall product strategy.
+Jul 2022 — Mar 2023 ARCHITECTURAL INTERN, ARCOP ASSOCIATES Bengaluru
+Arcop Associates Pvt Ltd is a multidisciplinary architecture and design firm known for large-scale 
+commercial, institutional, and urban development projects across India.
+•  Produced detailed technical drawings (plumbing, HV AC, lighting) aligned with design specifications 
+and regulatory standards, ensuring clarity between design intent and execution.
+•  Led 3D visualisations and high-fidelity presentation decks for 5+ major projects, improving 
+stakeholder understanding and decision-making (reported 60% increase in client clarity).
+•  Collaborated with multidisciplinary teams to translate technical constraints into clear, visually 
+communicative design solutions.
+•  Applied user-centred principles to spatial layouts, incorporating feedback to improve functionality 
+and usability of built environments.
+•  Contributed to structured documentation systems that improved workflow consistency and design 
+standardisation across projects.
+EDUCATION
+Sept 2024 — Mar 2026 MSc in Creative Digital Media and UX, Technological University 
+Dublin Dublin
+Aug 2023 — Mar 2024 Executive PG in UI/UX [CredentialID - IPTIH2403279], Indian 
+Institute of Technology Roorkee Roorkee, India
+Jul 2018 — Nov 2023 Bachelor of Architecture, Manipal School of Architecture and 
+Planning Manipal, India
+TECHNICAL STACK Design Tools
+Figma, Sketch, InVision, Adobe Creative Cloud (Photoshop, After Effects, Premiere Pro), Framer
+Frontend Development
+HTML, CSS, JavaScript, TypeScript, React, Next.js, Tailwind CSS, Three.js, GSAP, Motion.dev
+Backend & Data
+Firebase, PHP & MySQL, REST APIs , JSON, Node.js, Vercel
+Immersive Design
+Unity + C#, AR/VR Environments, 3D Interaction, Game UI Design
+Collaboration & Tools
+Git/GitHub, Trello, Miro, Stakeholder Communication, Workshop Facilitation

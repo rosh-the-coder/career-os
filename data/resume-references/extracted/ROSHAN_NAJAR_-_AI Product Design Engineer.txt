@@ -1,0 +1,99 @@
+ROSHAN NAJAR, Design Engineer
+County Dublin, Ireland, +353 838501604, theonlyroshn@gmail.com
+LINKS LinkedIn, Portfolio Website, Instagram, Github
+PROFILE AI-native Product Design Engineer who turns ambiguous ideas into interactive working prototypes using 
+AI-assisted workflows. Experienced in building and shipping 0→1 product concepts by combining UX 
+systems thinking with lightweight frontend implementation (React, TypeScript). Uses tools like Cursor 
+and ChatGPT as core collaborators for rapid prototyping, iteration, and feature validation.
+SKILLS React & TypeScript (production 
+implementation)
+Component Architecture & 
+Reusable UI Systems
+API Integration & Real-Time 
+Data
+UX Systems Thinking
+Accessibility & Semantic UI
+Design-to-Code Translation 
+(Figma → Production)
+Performance & Frontend 
+Optimisation
+AI-Assisted Development 
+Workflows (Cursor)
+UX Research & Usability 
+Testing
+SELECTED PROJECTS 
+Mar 2025 — Dec 2025 RedVelvetVault
+Designed and shipped a 0→1 interactive web platform enabling users to explore and engage with digital art 
+inside immersive 3D gallery environments. Transformed an abstract experiential concept into a functional, 
+testable product through rapid AI-assisted prototyping and iterative refinement.
+[Website LINK] [Show-reel LINK] [Project Report]
+Role: Product Design Engineer (0→1 Build)
+•  Led concept → prototype → working demo lifecycle, translating ambiguous experiential ideas into 
+usable interaction flows and live product features.
+•  Used AI-assisted workflows (ChatGPT + Cursor) as core collaborators for architecture planning, 
+feature scaffolding, debugging, and rapid iteration—significantly accelerating development cycles.
+•  Designed and implemented core user journeys including onboarding, navigation loops, 
+authentication, and real-time interaction systems.
+•  Built interactive prototypes directly in React and TypeScript, validating UX decisions through 
+functional demos rather than static mockups.
+•  Structured modular UI systems and reusable components to support fast experimentation without 
+breaking product stability.
+•  Integrated Firebase (Auth, Firestore, Storage) to enable real-time updates, user personalisation, and 
+scalable backend logic.
+•  Iterated based on usability clarity and interaction feedback, prioritising “aha moments” and flow 
+coherence over visual polish.
+•  Balanced UX intent, technical constraints (WebGL performance), and product scalability to ship a 
+production-ready experience.
+PROFESSIONAL EXPERIENCE
+Oct 2024 — Present INDEPENDENT PRODUCT DESIGNER (FREELANCE)
+•  Designed and implemented frontend interfaces for client projects, translating product requirements 
+into responsive React-based components.
+•  Collaborated with stakeholders to define feature scope and iterate rapidly in short development 
+cycles.
+•  Applied design systems and accessibility standards to ensure production-ready delivery.
+Jan 2025 — Present PRODUCT DESIGN CONSULTANT (Content & Growth), TWO 
+BLOKES TRADING Dublin
+Two Blokes Trading is a finance-focused content brand with a growing digital product offering (Trevesto), 
+targeting retail investors. 
+•  Contributed to product growth and user engagement through end-to-end content design for Two 
+Blokes Trading’s app and brand ecosystem (including Trevesto)
+•  Produced 30+ long-form podcast episodes and 250+ short-form videos across YouTube, Instagram, 
+TikTok, LinkedIn, X, and web platforms.
+•  Designed and delivered 300+ digital assets aligned with brand positioning, SEO strategy, and 
+platform-specific user behaviours.
+•  Increased YouTube subscribers from 2.9K to 8.2K (+183%) and total views from 34.9K to 165.5K 
+(+374%) within 10 months while working two days per week.
+•  Collaborated with marketing to create SEO-driven, user-focused multimedia content, improving 
+engagement through clear CTAs and accessible cross-platform design.
+•  Worked closely with founders, marketers, and developers, incorporating feedback rapidly and 
+contributing design input during app development to align content with overall product strategy.
+Jul 2022 — Mar 2023 ARCHITECTURAL INTERN, ARCOP ASSOCIATES Bengaluru
+Arcop Associates Pvt Ltd is a multidisciplinary architecture and design firm known for large-scale 
+commercial, institutional, and urban development projects across India.
+•  Produced detailed technical drawings (plumbing, HV AC, lighting) aligned with design specifications 
+and regulatory standards, ensuring clarity between design intent and execution.
+•  Led 3D visualisations and high-fidelity presentation decks for 5+ major projects, improving 
+stakeholder understanding and decision-making (reported 60% increase in client clarity).
+•  Collaborated with multidisciplinary teams to translate technical constraints into clear, visually 
+communicative design solutions.
+•  Applied user-centred principles to spatial layouts, incorporating feedback to improve functionality 
+and usability of built environments.
+•  Contributed to structured documentation systems that improved workflow consistency and design 
+standardisation across projects.
+EDUCATION
+Sept 2024 — Mar 2026 MSc in Creative Digital Media and UX, Technological University 
+Dublin Dublin
+Aug 2023 — Mar 2024 Executive PG in UI/UX [CredentialID - IPTIH2403279], Indian 
+Institute of Technology Roorkee Roorkee, India
+Jul 2018 — Nov 2023 Bachelor of Architecture, Manipal School of Architecture and 
+Planning Manipal, India
+TECHNICAL STACK Design Tools
+Figma, Sketch, InVision, Adobe Creative Cloud (Photoshop, After Effects, Premiere Pro), Framer
+Frontend Development
+HTML, CSS, JavaScript, TypeScript, React, Next.js, Tailwind CSS, Three.js, GSAP, Motion.dev
+Backend & Data
+Firebase, PHP & MySQL, REST APIs , JSON, Node.js, Vercel
+Immersive Design
+Unity + C#, AR/VR Environments, 3D Interaction, Game UI Design
+Collaboration & Tools
+Git/GitHub, Trello, Miro, Stakeholder Communication, Workshop Facilitation
