@@ -4,6 +4,7 @@ import { isDevAuthBypass } from "@/lib/auth/supabase";
 const NAV = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/jobs", label: "Jobs" },
+  { href: "/approve", label: "Approve" },
   { href: "/jobs/new", label: "Import" },
   { href: "/profiles", label: "Profiles" },
   { href: "/resume-studio", label: "Resume Studio" },

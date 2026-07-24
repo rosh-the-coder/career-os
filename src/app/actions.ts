@@ -127,3 +127,82 @@ export async function updateSettingsAction(formData: FormData) {
   });
   revalidatePath("/settings");
 }
+
+export async function runDiscoveryAction(): Promise<{
+  ok: boolean;
+  error?: string;
+  irelandCoreAdded?: number;
+  euSponsorshipAdded?: number;
+  samples?: { title: string; company: string; score: number; category: string }[];
+}> {
+  try {
+    const { runJobDiscovery } = await import("@/lib/jobs/discover");
+    const result = await runJobDiscovery();
+    revalidatePath("/dashboard");
+    revalidatePath("/jobs");
+    revalidatePath("/approve");
+    return {
+      ok: true,
+      irelandCoreAdded: result.irelandCoreAdded,
+      euSponsorshipAdded: result.euSponsorshipAdded,
+      samples: result.samples,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Discovery failed",
+    };
+  }
+}
+
+export async function prepareResumePacksAction(formData: FormData) {
+  const ids = formData.getAll("jobIds").map(String).filter(Boolean);
+  if (!ids.length) {
+    return { ok: false as const, error: "Select at least one job", prepared: 0, failed: [] as string[] };
+  }
+
+  const prepared: string[] = [];
+  const failed: { id: string; error: string }[] = [];
+
+  for (const jobId of ids) {
+    try {
+      const job = await prisma.job.findUnique({ where: { id: jobId } });
+      if (!job || job.status === "rejected") {
+        failed.push({ id: jobId, error: "Rejected or missing" });
+        continue;
+      }
+      await generateResumeForJob(jobId, 1);
+      await prisma.job.update({
+        where: { id: jobId },
+        data: { status: "materials_ready" },
+      });
+      prepared.push(jobId);
+    } catch (err) {
+      failed.push({ id: jobId, error: err instanceof Error ? err.message : "Failed" });
+    }
+  }
+
+  revalidatePath("/jobs");
+  revalidatePath("/approve");
+  revalidatePath("/resume-studio");
+  revalidatePath("/dashboard");
+
+  return {
+    ok: true as const,
+    prepared: prepared.length,
+    failed,
+  };
+}
+
+export async function saveJobsAction(formData: FormData) {
+  const ids = formData.getAll("jobIds").map(String).filter(Boolean);
+  if (ids.length) {
+    await prisma.job.updateMany({
+      where: { id: { in: ids }, NOT: { status: "rejected" } },
+      data: { status: "saved" },
+    });
+  }
+  revalidatePath("/jobs");
+  revalidatePath("/approve");
+  revalidatePath("/dashboard");
+}

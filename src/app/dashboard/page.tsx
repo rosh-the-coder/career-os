@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db/prisma";
 import { PageHeader, Panel, ScoreBadge, StatusPill } from "@/components/ui";
+import { DiscoverButton } from "@/components/discover-button";
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +55,14 @@ export default async function DashboardPage() {
         title="Dashboard"
         description={`Daily Ireland batch target: ${batchTarget}. EU sponsorship is a separate exclusive track. Model A: prepare packs — you submit.`}
         action={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-start justify-end gap-2">
+            <DiscoverButton />
+            <Link
+              href="/approve"
+              className="rounded-md border border-line px-4 py-2 text-sm text-ink hover:border-accent/40"
+            >
+              Approve queue
+            </Link>
             <Link
               href="/jobs/new"
               className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-canvas transition hover:bg-accent-dim"
@@ -73,9 +81,11 @@ export default async function DashboardPage() {
           { label: "Hard rejected", value: rejected },
           { label: "Applications", value: applicationCount },
         ].map((stat) => (
-          <Panel key={stat.label}>
-            <div className="font-mono text-[11px] uppercase tracking-[0.16em] text-ink-faint">{stat.label}</div>
-            <div className="mt-2 font-display text-3xl text-ink">{stat.value}</div>
+          <Panel key={stat.label} className="flex min-h-[108px] flex-col justify-between">
+            <div className="min-h-[2.5rem] font-mono text-[11px] uppercase leading-snug tracking-[0.14em] text-ink-faint">
+              {stat.label}
+            </div>
+            <div className="font-display text-3xl leading-none text-ink">{stat.value}</div>
           </Panel>
         ))}
       </div>
@@ -99,15 +109,19 @@ export default async function DashboardPage() {
       <Panel className="mb-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-display text-xl">Ireland / Dublin batch</h2>
-          <Link href="/jobs" className="text-sm text-ink-muted hover:text-ink">
-            View all
-          </Link>
+          <div className="flex gap-3 text-sm">
+            <Link href="/approve" className="text-accent hover:underline">
+              Approve →
+            </Link>
+            <Link href="/jobs" className="text-ink-muted hover:text-ink">
+              View all
+            </Link>
+          </div>
         </div>
         {irelandPriority.length === 0 ? (
           <p className="text-sm text-ink-muted">
-            No Ireland matches yet. Run{" "}
-            <code className="font-mono text-accent">npm run cli:discover</code> for Greenhouse boards,
-            or import a URL + pasted JD.
+            No Ireland matches yet. Click <span className="text-ink">Run daily discovery</span> or import a
+            listing.
           </p>
         ) : (
           <ul className="divide-y divide-line">
