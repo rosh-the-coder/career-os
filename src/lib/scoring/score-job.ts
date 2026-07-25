@@ -6,7 +6,7 @@ import {
   type ScoreBreakdown,
   type SoftFlag,
 } from "@/lib/types";
-import { runHardFilters, type FilterableJob, type FilterSettings } from "@/lib/scoring/hard-filters";
+import { inferYearsRequired, runHardFilters, type FilterableJob, type FilterSettings } from "@/lib/scoring/hard-filters";
 
 export interface ScoringProfile {
   key: ProfileKey | string;
@@ -231,10 +231,28 @@ function projectRelevance(
 
 function seniorityFit(job: FilterableJob): number {
   const title = job.title.toLowerCase();
-  if (/\b(junior|graduate|entry)\b/.test(title)) return 0.75;
-  if (/\b(senior|lead)\b/.test(title)) return 0.55;
-  if (/\b(mid|intermediate)\b/.test(title)) return 0.9;
-  return 0.85;
+  const text = `${job.descriptionClean || job.descriptionRaw}`.toLowerCase();
+  const years = job.yearsRequired ?? inferYearsRequired(`${title}\n${text}`);
+
+  let base = 0.88;
+  if (/\b(junior|graduate|entry[- ]level|associate)\b/.test(title)) base = 0.82;
+  else if (/\b(mid[- ]level|intermediate)\b/.test(title)) base = 0.95;
+  else if (/\b(senior|lead)\b/.test(title)) base = 0.22;
+  else if (/\b(staff|principal|director|head of|vp\b)\b/.test(title)) base = 0.05;
+  // Exact mid titles without senior — UX/UI Designer, Product Designer, etc.
+  else if (/\b(ux[/ ]?ui|ui[/ ]?ux|ux designer|ui designer|product designer|ux engineer|design engineer)\b/.test(title)) {
+    base = 0.94;
+  }
+
+  if (years != null) {
+    if (years >= 8) base = Math.min(base, 0.08);
+    else if (years >= 6) base = Math.min(base, 0.18);
+    else if (years >= 5) base = Math.min(base, 0.32);
+    else if (years >= 4) base = Math.min(base, 0.5);
+    else if (years <= 2) base = Math.max(base, 0.9);
+  }
+
+  return clamp01(base);
 }
 
 function locationFit(job: FilterableJob): number {
@@ -361,8 +379,10 @@ export function scoreJob(ctx: ScoringContext): JobScoreResult {
   for (const flag of softFlags) {
     if (flag.severity === "warn") gaps.push(flag.message);
   }
-  if (breakdown.seniorityFit < 0.7) {
-    gaps.push("Title seniority may be a stretch — soft note only");
+  if (breakdown.seniorityFit < 0.45) {
+    gaps.push("Seniority / years asked are a poor fit for current mid-level band");
+  } else if (breakdown.seniorityFit < 0.7) {
+    gaps.push("Title seniority may be a stretch");
   }
 
   return {

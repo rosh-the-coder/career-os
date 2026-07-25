@@ -111,6 +111,54 @@ export default async function SettingsPage() {
             </button>
           </form>
         </Panel>
+
+        <Panel className="lg:col-span-2">
+          <h2 className="font-display text-xl">Discovery APIs</h2>
+          <p className="mt-2 text-sm text-ink-muted">
+            Scoring uses an <span className="text-ink">LLM judge</span> (Groq free primary, Gemini
+            fallback) after local hard filters. CV packs stay deterministic unless you turn Gemini polish
+            on. Images should stay on Cloudflare Workers AI — don&apos;t share that neuron pool with
+            CareerOS.
+          </p>
+          <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-ink-muted">
+            <li>
+              Free Groq key:{" "}
+              <a
+                className="text-accent hover:underline"
+                href="https://console.groq.com/keys"
+                target="_blank"
+                rel="noreferrer"
+              >
+                console.groq.com/keys
+              </a>{" "}
+              → add <code className="text-ink">GROQ_API_KEY</code> to <code className="text-ink">.env</code>{" "}
+              then restart. Optional:{" "}
+              <code className="text-ink">GROQ_SCORE_MODEL=llama-3.3-70b-versatile</code> for stronger
+              judging (lower free daily cap).
+            </li>
+            <li>
+              Free Adzuna keys:{" "}
+              <a
+                className="text-accent hover:underline"
+                href="https://developer.adzuna.com/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                developer.adzuna.com
+              </a>{" "}
+              → <code className="text-ink">ADZUNA_APP_ID</code> +{" "}
+              <code className="text-ink">ADZUNA_APP_KEY</code>.
+            </li>
+            <li>
+              Optional board verify: <code className="text-ink">BRAVE_SEARCH_API_KEY</code> or{" "}
+              <code className="text-ink">SERPAPI_KEY</code>.
+            </li>
+            <li>
+              Niche employers: edit{" "}
+              <code className="text-ink">src/lib/jobs/ireland-watchlist.ts</code>.
+            </li>
+          </ol>
+        </Panel>
       </div>
     </div>
   );

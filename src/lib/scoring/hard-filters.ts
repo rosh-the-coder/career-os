@@ -37,7 +37,7 @@ const PHYSICAL_ENGINEERING_RE =
   /\b(mechanical design engineer|electrical design engineer|civil engineer|structural engineer|hardware engineer|pcb|solidworks|autocad|catia|nx\b|inventor\b|revit|hvac|mechatronics|manufacturing engineer|process engineer)\b/i;
 
 const DEEP_ML_RE =
-  /\b(phd|machine learning engineer|research scientist|ml research|model training|deep learning research|pytorch research|tensorflow research)\b/i;
+  /\b(phd\b|ph\.d|doctoral|research scientist|ml research scientist|deep learning research|published research|neurips|icml|cvpr)\b/i;
 
 const INTERNSHIP_RE = /\b(internship|intern\b|unpaid intern)\b/i;
 const UNPAID_RE = /\b(unpaid|commission[-\s]?only|volunteer)\b/i;
@@ -165,8 +165,8 @@ export function runHardFilters(
     };
   }
 
-  // Deep ML / PhD
-  if (DEEP_ML_RE.test(text) && /\b(required|must|phd)\b/i.test(text)) {
+  // Deep ML / PhD research track only — not applied AI / LLM engineering JDs
+  if (DEEP_ML_RE.test(text) && /\b(required|must have|mandatory|phd)\b/i.test(text)) {
     return {
       rejected: true,
       reason: "Requires deep ML research / PhD-level expertise",
@@ -190,17 +190,52 @@ export function runHardFilters(
   const eligibility = classifyEligibility(job, text);
   softFlags.push(...eligibility.softFlags);
 
-  // Years soft note (Option A) — only soft unless extreme
-  if (job.yearsRequired && job.yearsRequired >= 5) {
+  // Always prefer text inference; ignore stored years if they look like company-age noise (>15)
+  const fromText = inferYearsRequired(job.descriptionClean || job.descriptionRaw || text);
+  const stored =
+    job.yearsRequired != null && job.yearsRequired >= 1 && job.yearsRequired <= 15
+      ? job.yearsRequired
+      : undefined;
+  const inferredYears = fromText ?? stored;
+  if (inferredYears != null && inferredYears >= 8) {
+    return {
+      rejected: true,
+      reason: `Requires ${inferredYears}+ years of experience — outside current target band`,
+      softFlags,
+      eligibilityCurrent: "unclear",
+      eligibilityFuture: "unknown",
+    };
+  }
+
+  if (inferredYears != null && inferredYears >= 6 && /\bsenior\b/i.test(job.title)) {
+    return {
+      rejected: true,
+      reason: `Senior title asking ${inferredYears}+ years — outside mid-level target band`,
+      softFlags,
+      eligibilityCurrent: "unclear",
+      eligibilityFuture: "unknown",
+    };
+  }
+
+  if (/\bsenior\b/i.test(job.title)) {
     softFlags.push({
-      code: "high_years_requested",
-      message: `Ad requests ${job.yearsRequired}+ years — soft warning; skills match still evaluated.`,
+      code: "senior_title_stretch",
+      message: "Senior title — keep only if skills/evidence strongly match; treat as stretch.",
       severity: "warn",
     });
-  } else if (job.yearsRequired && job.yearsRequired >= 3) {
+  }
+
+  // Years soft note (Option A) for mid stretch — hard reject only at 8+ (or Senior+6)
+  if (inferredYears != null && inferredYears >= 5) {
+    softFlags.push({
+      code: "high_years_requested",
+      message: `Ad requests ${inferredYears}+ years — soft warning; skills match still evaluated.`,
+      severity: "warn",
+    });
+  } else if (inferredYears != null && inferredYears >= 3) {
     softFlags.push({
       code: "years_requested",
-      message: `Ad asks for ${job.yearsRequired}+ years — soft note only; scoring prioritizes skills/evidence.`,
+      message: `Ad asks for ${inferredYears}+ years — soft note only; scoring prioritizes skills/evidence.`,
       severity: "info",
     });
   }
@@ -225,4 +260,52 @@ export function runHardFilters(
     eligibilityCurrent: eligibility.current,
     eligibilityFuture: eligibility.future,
   };
+}
+
+/** Pull candidate YOE requirement — ignore company-age fluff like "30 years in business". */
+export function inferYearsRequired(text: string): number | undefined {
+  const raw = text.replace(/\s+/g, " ");
+
+  const COMPANY_AGE =
+    /\b(in business|as a (great )?place|celebrat|anniversary|established|founded|for over \d+ years|years of (excellence|success|service|innovation|partnership)|trusted for \d+|operating for)\b/i;
+
+  const candidates: number[] = [];
+
+  const consider = (n: number, context: string) => {
+    if (!Number.isFinite(n) || n < 1 || n > 15) return; // >15 almost never a real mid-band ask
+    if (COMPANY_AGE.test(context)) return;
+    // "10+ years as a Great Place to Work" / award copy
+    if (/\byears?\s+as\s+a\b/i.test(context)) return;
+    candidates.push(n);
+  };
+
+  // Explicit experience asks (strongest)
+  for (const m of raw.matchAll(
+    /(\d+)\s*[-–—]\s*(\d+)\s*years?(?:\s+of)?(?:\s+[\w/-]+){0,5}\s+experience\b/gi,
+  )) {
+    // Use lower bound of range as the requirement floor (4-6 → 4)
+    consider(Number(m[1]), m[0]);
+  }
+  for (const m of raw.matchAll(
+    /(?<![\d])(\d+)\s*\+\s*years?(?:\s+of)?(?:\s+[\w/-]+){0,5}\s+experience\b/gi,
+  )) {
+    consider(Number(m[1]), m[0]);
+  }
+  for (const m of raw.matchAll(
+    /(?<![\d-–—])(\d+)\s+years?(?:\s+of)?(?:\s+[\w/-]+){0,5}\s+experience\b/gi,
+  )) {
+    consider(Number(m[1]), m[0]);
+  }
+  for (const m of raw.matchAll(/(?:minimum|at\s+least|min\.?)\s*(?:of\s*)?(\d+)\s*\+?\s*years?/gi)) {
+    consider(Number(m[1]), m[0]);
+  }
+  for (const m of raw.matchAll(/(?<![\d])(\d+)\s*\+\s*years?\b/gi)) {
+    const start = Math.max(0, (m.index ?? 0) - 40);
+    const end = (m.index ?? 0) + m[0].length + 60;
+    consider(Number(m[1]), raw.slice(start, end));
+  }
+
+  if (!candidates.length) return undefined;
+  // Prefer the *stated requirement floor*, not inflated noise — use max among valid floors ≤15
+  return Math.max(...candidates);
 }

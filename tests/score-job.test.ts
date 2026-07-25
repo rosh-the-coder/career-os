@@ -108,4 +108,40 @@ describe("scoreJob", () => {
     expect(result.hardRejected).toBe(false);
     expect(result.totalScore).toBeGreaterThan(0);
   });
+
+  it("scores mid UX/UI Designer clearly above Senior 5+ YOE stretch roles", () => {
+    const deloitteLike = scoreJob(
+      baseCtx({
+        job: {
+          ...baseCtx().job,
+          title: "UX/UI Designer",
+          company: "Deloitte",
+          yearsRequired: null,
+          descriptionRaw:
+            "UX/UI Designer hybrid remote Dublin. Figma, React, design systems, accessibility.",
+          descriptionClean:
+            "UX/UI Designer hybrid remote Dublin. Figma, React, design systems, accessibility.",
+        },
+      }),
+    );
+    const seniorStretch = scoreJob(
+      baseCtx({
+        job: {
+          ...baseCtx().job,
+          title: "Senior Product Engineer, AI",
+          company: "Intercom",
+          yearsRequired: 5,
+          descriptionRaw:
+            "Senior Product Engineer AI. 5+ years experience. React TypeScript Dublin.",
+          descriptionClean:
+            "Senior Product Engineer AI. 5+ years experience. React TypeScript Dublin.",
+        },
+      }),
+    );
+    expect(deloitteLike.hardRejected).toBe(false);
+    expect(seniorStretch.hardRejected).toBe(false);
+    expect(deloitteLike.totalScore - seniorStretch.totalScore).toBeGreaterThanOrEqual(12);
+    expect(seniorStretch.breakdown.seniorityFit).toBeLessThan(0.4);
+    expect(deloitteLike.breakdown.seniorityFit).toBeGreaterThan(0.85);
+  });
 });

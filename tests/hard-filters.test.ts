@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { runHardFilters } from "../src/lib/scoring/hard-filters";
+import { inferYearsRequired, runHardFilters } from "../src/lib/scoring/hard-filters";
 
 const baseSettings = {
   includeFallbackVideoRoles: false,
@@ -81,15 +81,73 @@ describe("hard filters", () => {
     expect(result.rejected).toBe(true);
   });
 
-  it("allows video editor when fallback toggle on", () => {
+  it("rejects 8+ years experience requirements", () => {
     const result = runHardFilters(
       {
-        title: "Video Editor",
-        company: "Studio",
-        descriptionRaw: "Edit social videos in Dublin.",
-        descriptionClean: "Edit social videos in Dublin.",
+        title: "Product Designer",
+        company: "BigCo",
+        location: "Dublin, Ireland",
+        descriptionRaw: "We need 8+ years of product design experience in Dublin.",
+        descriptionClean: "We need 8+ years of product design experience in Dublin.",
+        yearsRequired: 8,
       },
-      { ...baseSettings, includeFallbackVideoRoles: true },
+      baseSettings,
+    );
+    expect(result.rejected).toBe(true);
+    expect(result.reason).toMatch(/8\+/);
+  });
+
+  it("rejects Senior titles asking 6+ years", () => {
+    const result = runHardFilters(
+      {
+        title: "Senior Product Designer",
+        company: "BigCo",
+        location: "Dublin, Ireland",
+        descriptionRaw: "6+ years of design experience required.",
+        descriptionClean: "6+ years of design experience required.",
+        yearsRequired: 6,
+      },
+      baseSettings,
+    );
+    expect(result.rejected).toBe(true);
+    expect(result.reason).toMatch(/Senior/i);
+  });
+
+  it("does not treat company age as candidate YOE", () => {
+    const years = inferYearsRequired(
+      "Version 1 has celebrated 30 years in business. 10+ years as a Great Place to Work. We need 4-6 years of experience building AI solutions.",
+    );
+    expect(years).toBe(4);
+
+    const result = runHardFilters(
+      {
+        title: "AI Engineer",
+        company: "Version 1",
+        location: "Dublin, Ireland",
+        descriptionRaw:
+          "Version 1 has celebrated 30 years in business and 10+ years as a Great Place to Work. Role requires 4-6 years of experience with React and AI.",
+        descriptionClean:
+          "Version 1 has celebrated 30 years in business and 10+ years as a Great Place to Work. Role requires 4-6 years of experience with React and AI.",
+        yearsRequired: 30, // stale bad parse
+      },
+      baseSettings,
+    );
+    expect(result.rejected).toBe(false);
+  });
+
+  it("does not hard-reject applied AI engineer JDs for model training wording", () => {
+    const result = runHardFilters(
+      {
+        title: "AI Engineer 2",
+        company: "Mastercard",
+        location: "Dublin, Ireland",
+        descriptionRaw:
+          "Develop and support AI and machine learning models. Build model training pipelines. Collaborate with senior engineers in Dublin.",
+        descriptionClean:
+          "Develop and support AI and machine learning models. Build model training pipelines. Collaborate with senior engineers in Dublin.",
+        yearsRequired: 5,
+      },
+      baseSettings,
     );
     expect(result.rejected).toBe(false);
   });

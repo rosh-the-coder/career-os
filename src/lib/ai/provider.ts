@@ -17,18 +17,29 @@ function getClient() {
   return new GoogleGenerativeAI(key);
 }
 
+function isQuotaOrRateLimit(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return /429|quota|rate.?limit|too many requests|resource_exhausted/i.test(msg);
+}
+
 async function geminiJson<T>(prompt: string): Promise<T | null> {
   const client = getClient();
   if (!client) return null;
-  const model = client.getGenerativeModel({
-    model: "gemini-2.0-flash",
-    generationConfig: { responseMimeType: "application/json" },
-  });
-  const result = await model.generateContent(`${PROMPT_GUARDRAILS}\n\n${prompt}`);
-  const text = result.response.text();
   try {
+    const model = client.getGenerativeModel({
+      model: "gemini-2.0-flash",
+      generationConfig: { responseMimeType: "application/json" },
+    });
+    const result = await model.generateContent(`${PROMPT_GUARDRAILS}\n\n${prompt}`);
+    const text = result.response.text();
     return JSON.parse(text) as T;
-  } catch {
+  } catch (err) {
+    // Free-tier 429 / network / JSON errors → caller uses deterministic fallback
+    if (isQuotaOrRateLimit(err)) {
+      console.warn("[gemini] quota/rate-limit — using deterministic fallback");
+    } else {
+      console.warn("[gemini] call failed — using deterministic fallback:", err);
+    }
     return null;
   }
 }
@@ -81,7 +92,11 @@ ${jobText.slice(0, 20000)}
 
   async generateResume(input: ResumeGenerationInput): Promise<ResumeDraft> {
     const base = composeResumeDeterministic(input);
-    const refined = await geminiJson<{ summary: string; experiences: ResumeDraft["experiences"]; projects: ResumeDraft["projects"] }>(`
+    const refined = await geminiJson<{
+      summary: string;
+      experiences: ResumeDraft["experiences"];
+      projects: ResumeDraft["projects"];
+    }>(`
 Rewrite resume content using ONLY the provided evidence. Do not invent facts.
 Return JSON: { summary, experiences (same structure), projects (same structure) }.
 Profile: ${input.profile.name} — ${input.profile.positioning}
@@ -96,7 +111,7 @@ Skills: ${input.skills.join(", ")}
       summary: refined.summary,
       experiences: refined.experiences ?? base.experiences,
       projects: refined.projects ?? base.projects,
-      markdown: base.markdown, // recomposed below by caller if needed
+      markdown: base.markdown,
     };
   }
 
@@ -114,6 +129,10 @@ Settings: ${input.settingsNotes}
 }
 
 export function getLLMProvider(): LLMProvider {
+  // CV packs work without any LLM. Gemini is optional polish only.
+  if (process.env.RESUME_DETERMINISTIC_ONLY !== "false") {
+    return new DeterministicProvider();
+  }
   if (process.env.GEMINI_API_KEY) return new GeminiProvider();
   return new DeterministicProvider();
 }

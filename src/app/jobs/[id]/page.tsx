@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { generateResumeAction, recordApplicationAction, rescoreJobAction } from "@/app/actions";
+import { JobDescriptionEditor } from "@/components/job-description-editor";
 import { EstimateTooltip, PageHeader, Panel, ScoreBadge, StatusPill } from "@/components/ui";
 import { prisma } from "@/lib/db/prisma";
+import { computeParseConfidence, isLlmScored } from "@/lib/jobs/jd-meta";
 import { SCORE_WEIGHTS } from "@/lib/types";
 import { parseJsonArray } from "@/lib/utils";
 
@@ -22,6 +24,18 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
   const projects = job.score ? parseJsonArray<string>(job.score.recommendedProjectsJson) : [];
   const evidence = job.score ? parseJsonArray<string>(job.score.evidenceUsedJson) : [];
   const requirements = parseJsonArray<{ text: string; kind: string }>(job.requirementsJson);
+  const llmScored = isLlmScored(job.score?.modelVersion);
+  const confidence = computeParseConfidence({
+    description: job.descriptionClean || job.descriptionRaw,
+    title: job.title,
+    location: job.location,
+    yearsRequired: job.yearsRequired,
+    requirementsCount: requirements.length,
+    llmScored,
+  });
+  const rateLimitFlag = softFlags.find(
+    (f) => f.code === "llm_rate_limit" || /rate limit|trim the job/i.test(f.message),
+  );
 
   return (
     <div>
@@ -36,6 +50,13 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
         }
       />
 
+      {rateLimitFlag ? (
+        <Panel className="mb-6 border-warn/40">
+          <div className="text-sm font-medium text-warn">Rate limit — trim the JD</div>
+          <p className="mt-1 text-sm text-ink-muted">{rateLimitFlag.message}</p>
+        </Panel>
+      ) : null}
+
       {job.hardRejectReason ? (
         <Panel className="mb-6 border-danger/40">
           <div className="text-sm font-medium text-danger">Hard rejected</div>
@@ -49,6 +70,13 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
           {job.score?.profile ? (
             <p className="mt-2 text-sm text-ink-muted">
               Recommended profile: <span className="text-ink">{job.score.profile.name}</span>
+            </p>
+          ) : null}
+          {job.score?.modelVersion ? (
+            <p className="mt-1 font-mono text-[11px] text-ink-faint">
+              Scorer: {llmScored ? "LLM judge" : "Awaiting LLM / heuristic"} · {job.score.modelVersion}
+              {" · "}
+              Parse confidence: {confidence}
             </p>
           ) : null}
 
@@ -81,8 +109,11 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
             <div className="mt-5">
               <h3 className="font-mono text-[11px] uppercase tracking-wider text-ink-faint">Soft flags</h3>
               <ul className="mt-2 space-y-2">
-                {softFlags.map((f) => (
-                  <li key={f.code} className="text-sm text-ink-muted">
+                {softFlags.map((f, i) => (
+                  <li
+                    key={`${f.code}-${i}`}
+                    className={`text-sm ${f.severity === "warn" ? "text-warn" : "text-ink-muted"}`}
+                  >
                     {f.message}
                     {f.code.includes("estimate") || f.message.toLowerCase().includes("estimat") ? (
                       <EstimateTooltip />
@@ -124,10 +155,16 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
           <div className="mt-6 space-y-2 border-t border-line pt-4">
             <form action={rescoreJobAction}>
               <input type="hidden" name="jobId" value={job.id} />
-              <button type="submit" className="w-full rounded-md border border-line px-3 py-2 text-sm hover:bg-panel-2">
-                Re-score
+              <button
+                type="submit"
+                className="w-full rounded-md bg-accent px-3 py-2 text-sm font-medium text-canvas hover:bg-accent-dim"
+              >
+                {llmScored ? "Re-score with LLM" : "Score with LLM"}
               </button>
             </form>
+            <p className="text-xs text-ink-faint">
+              Scores one job at a time. If you hit a rate limit, trim the description below and try again.
+            </p>
             {job.status !== "rejected" ? (
               <>
                 <form action={generateResumeAction} className="flex gap-2">
@@ -219,15 +256,15 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
       </div>
 
       <Panel>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-display text-xl">Description</h2>
-          <Link href="/jobs" className="text-sm text-ink-muted hover:text-ink">
-            ← Back
+        <div className="mb-3 flex justify-end">
+          <Link href="/approve" className="text-sm text-ink-muted hover:text-ink">
+            ← Back to approve
           </Link>
         </div>
-        <pre className="max-h-[480px] overflow-auto whitespace-pre-wrap font-mono text-xs leading-relaxed text-ink-muted">
-          {job.descriptionClean || job.descriptionRaw}
-        </pre>
+        <JobDescriptionEditor
+          jobId={job.id}
+          initialText={job.descriptionClean || job.descriptionRaw}
+        />
       </Panel>
     </div>
   );

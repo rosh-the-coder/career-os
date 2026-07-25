@@ -15,7 +15,7 @@ export default async function ResumeStudioPage() {
     <div>
       <PageHeader
         title="Resume Studio"
-        description="Generated ATS drafts with claim validation. DOCX exports land in data/exports."
+        description="Generated ATS drafts with claim validation. Download DOCX/PDF below — works on Vercel too."
       />
 
       <div className="space-y-4">
@@ -37,8 +37,20 @@ export default async function ResumeStudioPage() {
                     {v.profile.name} · {v.pageLength}-page · {v.fileName}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <StatusPill status={v.validationStatus} />
+                  <a
+                    href={`/api/resumes/${v.id}/download?format=docx`}
+                    className="rounded-md border border-line px-3 py-1.5 text-sm hover:border-accent/40"
+                  >
+                    Download DOCX
+                  </a>
+                  <a
+                    href={`/api/resumes/${v.id}/download?format=pdf`}
+                    className="rounded-md border border-line px-3 py-1.5 text-sm hover:border-accent/40"
+                  >
+                    Download PDF
+                  </a>
                   {v.job ? (
                     <Link href={`/jobs/${v.job.id}`} className="text-sm text-accent hover:underline">
                       Job
@@ -62,9 +74,7 @@ export default async function ResumeStudioPage() {
               </pre>
 
               <div className="mt-3 font-mono text-[11px] text-ink-faint">
-            DOCX: {v.docxPath ?? "—"}
-            {v.pdfPath ? ` · PDF: ${v.pdfPath}` : ""} · Evidence items:{" "}
-            {parseJsonArray(v.evidenceUsedJson).length}
+                Evidence items: {parseJsonArray(v.evidenceUsedJson).length}
               </div>
             </Panel>
           );
@@ -73,7 +83,7 @@ export default async function ResumeStudioPage() {
         {versions.length === 0 ? (
           <Panel>
             <p className="text-sm text-ink-muted">
-              No resumes yet. Score a job, then generate a CV from the job detail page.
+              No resumes yet. Use Approve queue → Prepare CV packs, or generate from a job detail page.
             </p>
           </Panel>
         ) : null}

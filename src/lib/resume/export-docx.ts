@@ -6,13 +6,12 @@ import {
   convertInchesToTwip,
 } from "docx";
 import PDFDocument from "pdfkit";
-import { createWriteStream } from "fs";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import type { ResumeDraft, ResumeGenerationInput } from "@/lib/ai/types";
 
 export interface AtsResumeContent {
-  documentTitle: string; // e.g. "ROSHAN NAJAR, UX Engineer"
+  documentTitle: string;
   contactLine: string;
   linksLine: string;
   profile: string;
@@ -108,7 +107,7 @@ export async function generateDocxAndPdf(
   markdown: string,
   outDir: string,
   fileBase: string,
-): Promise<{ docxPath: string; pdfPath: string; markdownPath: string }> {
+): Promise<{ docxPath: string; pdfPath: string | null; markdownPath: string }> {
   await mkdir(outDir, { recursive: true });
 
   const children: Paragraph[] = [
@@ -123,10 +122,10 @@ export async function generateDocxAndPdf(
   ];
 
   for (const p of content.projects) {
-    children.push(docParagraph(`${p.dates ? p.dates + " " : ""}${p.name}`, { bold: true }));
-    if (p.blurb) children.push(docParagraph(p.blurb, { size: 18 }));
-    if (p.links) children.push(docParagraph(p.links, { size: 18 }));
-    children.push(docParagraph(`Role: ${p.role}`, { size: 18 }));
+    children.push(docParagraph(`${p.dates ? p.dates + "  " : ""}${p.name}`, { bold: true, spacingAfter: 40 }));
+    if (p.blurb) children.push(docParagraph(p.blurb, { size: 18, spacingAfter: 40 }));
+    if (p.links) children.push(docParagraph(p.links, { size: 18, spacingAfter: 40 }));
+    children.push(docParagraph(`Role: ${p.role}`, { size: 18, spacingAfter: 60 }));
     for (const b of p.bullets) {
       children.push(
         new Paragraph({
@@ -136,16 +135,18 @@ export async function generateDocxAndPdf(
         }),
       );
     }
+    children.push(docParagraph("", { spacingAfter: 80 }));
   }
 
   children.push(docParagraph("PROFESSIONAL EXPERIENCE", { bold: true, size: 22, spacingAfter: 120 }));
   for (const e of content.experiences) {
     children.push(
-      docParagraph(`${e.dates} ${e.title}, ${e.company}${e.location ? ` ${e.location}` : ""}`, {
+      docParagraph(`${e.dates}  ${e.title}, ${e.company}${e.location ? ` — ${e.location}` : ""}`, {
         bold: true,
+        spacingAfter: 40,
       }),
     );
-    if (e.companyBlurb) children.push(docParagraph(e.companyBlurb, { size: 18 }));
+    if (e.companyBlurb) children.push(docParagraph(e.companyBlurb, { size: 18, spacingAfter: 60 }));
     for (const b of e.bullets) {
       children.push(
         new Paragraph({
@@ -155,11 +156,12 @@ export async function generateDocxAndPdf(
         }),
       );
     }
+    children.push(docParagraph("", { spacingAfter: 80 }));
   }
 
-  children.push(docParagraph("EDUCATION", { bold: true, size: 22, spacingAfter: 120 }));
+  children.push(docParagraph("EDUCATION", { bold: true, size: 22, spacingAfter: 100 }));
   for (const ed of content.education) {
-    children.push(docParagraph(`${ed.dates ? ed.dates + " " : ""}${ed.line}`));
+    children.push(docParagraph(`${ed.dates ? ed.dates + "  " : ""}${ed.line}`, { spacingAfter: 40 }));
     for (const d of ed.details ?? []) {
       children.push(
         new Paragraph({
@@ -171,9 +173,17 @@ export async function generateDocxAndPdf(
     }
   }
 
-  children.push(docParagraph("TECHNICAL STACK", { bold: true, size: 22, spacingAfter: 120 }));
+  children.push(docParagraph("TECHNICAL STACK", { bold: true, size: 22, spacingAfter: 80 }));
   for (const t of content.technicalStack) {
-    children.push(docParagraph(`${t.group}: ${t.items}`, { size: 18 }));
+    children.push(
+      new Paragraph({
+        spacing: { after: 60 },
+        children: [
+          new TextRun({ text: `${t.group}: `, bold: true, size: 18, font: "Calibri" }),
+          new TextRun({ text: t.items, size: 18, font: "Calibri" }),
+        ],
+      }),
+    );
   }
 
   const doc = new Document({
@@ -201,19 +211,30 @@ export async function generateDocxAndPdf(
   const buffer = await Packer.toBuffer(doc);
   await writeFile(docxPath, buffer);
   await writeFile(markdownPath, markdown, "utf8");
-  await writeAtsPdf(content, pdfPath);
 
-  return { docxPath, pdfPath, markdownPath };
+  // PDF is nice-to-have — never fail the whole pack if PDFKit chokes
+  let writtenPdf: string | null = pdfPath;
+  try {
+    const pdfBuf = await buildAtsPdfBuffer(content);
+    await writeFile(pdfPath, pdfBuf);
+  } catch (err) {
+    console.warn("[export] PDF skipped:", err instanceof Error ? err.message : err);
+    writtenPdf = null;
+  }
+
+  return { docxPath, pdfPath: writtenPdf, markdownPath };
 }
 
-function writeAtsPdf(content: AtsResumeContent, pdfPath: string): Promise<void> {
+function buildAtsPdfBuffer(content: AtsResumeContent): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
       size: "A4",
       margins: { top: 40, bottom: 40, left: 48, right: 48 },
     });
-    const stream = createWriteStream(pdfPath);
-    doc.pipe(stream);
+    const chunks: Buffer[] = [];
+    doc.on("data", (chunk: Buffer) => chunks.push(chunk));
+    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
 
     const write = (text: string, opts?: { bold?: boolean; size?: number; gap?: number }) => {
       doc
@@ -233,7 +254,8 @@ function writeAtsPdf(content: AtsResumeContent, pdfPath: string): Promise<void> 
     write(content.skills.join(" · "), { gap: 0.55 });
     write("SELECTED PROJECTS", { bold: true, size: 11 });
     for (const p of content.projects) {
-      write(`${p.dates ? p.dates + " " : ""}${p.name}`, { bold: true, gap: 0.15 });
+      write(`${p.dates ? p.dates + "  " : ""}${p.name}`, { bold: true, gap: 0.15 });
+      if (p.blurb) write(p.blurb, { size: 9, gap: 0.12 });
       if (p.links) write(p.links, { size: 9, gap: 0.1 });
       write(`Role: ${p.role}`, { size: 9, gap: 0.15 });
       for (const b of p.bullets) write(`• ${b}`, { size: 9.5, gap: 0.12 });
@@ -241,7 +263,11 @@ function writeAtsPdf(content: AtsResumeContent, pdfPath: string): Promise<void> 
     }
     write("PROFESSIONAL EXPERIENCE", { bold: true, size: 11 });
     for (const e of content.experiences) {
-      write(`${e.dates} ${e.title}, ${e.company}`, { bold: true, gap: 0.15 });
+      write(
+        `${e.dates}  ${e.title}, ${e.company}${e.location ? ` — ${e.location}` : ""}`,
+        { bold: true, gap: 0.15 },
+      );
+      if (e.companyBlurb) write(e.companyBlurb, { size: 9, gap: 0.12 });
       for (const b of e.bullets) write(`• ${b}`, { size: 9.5, gap: 0.12 });
       doc.moveDown(0.2);
     }
@@ -252,8 +278,6 @@ function writeAtsPdf(content: AtsResumeContent, pdfPath: string): Promise<void> 
     for (const t of content.technicalStack) write(`${t.group}: ${t.items}`, { size: 9, gap: 0.12 });
 
     doc.end();
-    stream.on("finish", () => resolve());
-    stream.on("error", reject);
   });
 }
 

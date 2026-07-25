@@ -1,9 +1,23 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db/prisma";
 import { PageHeader, Panel, ScoreBadge, StatusPill } from "@/components/ui";
-import { DiscoverButton } from "@/components/discover-button";
+import { DashboardActions } from "@/components/dashboard-actions";
 
 export const dynamic = "force-dynamic";
+
+function dedupeByUrl<T extends { id: string; url: string | null; score: { totalScore: number } | null }>(
+  jobs: T[],
+): T[] {
+  const best = new Map<string, T>();
+  for (const job of jobs) {
+    const key = job.url ?? job.id;
+    const prev = best.get(key);
+    if (!prev || (job.score?.totalScore ?? 0) > (prev.score?.totalScore ?? 0)) {
+      best.set(key, job);
+    }
+  }
+  return [...best.values()];
+}
 
 export default async function DashboardPage() {
   const settings = await prisma.settings.findFirst();
@@ -12,73 +26,64 @@ export default async function DashboardPage() {
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
 
-  const [jobCount, scoredJobs, euJobs, applicationCount, estimateCount, irelandToday, rejected, scored] =
-    await Promise.all([
-      prisma.job.count(),
-      prisma.job.findMany({
-        where: {
-          listingCategory: "ireland_core",
-          status: { in: ["scored", "materials_ready", "saved"] },
-        },
-        include: { score: true },
-        orderBy: { collectedAt: "desc" },
-        take: 80,
-      }),
-      prisma.job.findMany({
-        where: {
-          listingCategory: "eu_sponsorship",
-          NOT: { status: "rejected" },
-        },
-        include: { score: true },
-        orderBy: { collectedAt: "desc" },
-        take: 15,
-      }),
-      prisma.application.count(),
-      prisma.metric.count({ where: { OR: [{ isEstimate: true }, { needsReview: true }] } }),
-      prisma.job.count({
-        where: {
-          listingCategory: "ireland_core",
-          collectedAt: { gte: startOfDay },
-        },
-      }),
-      prisma.job.count({ where: { status: "rejected" } }),
-      prisma.job.count({ where: { status: "scored" } }),
-    ]);
+  const [allJobs, euJobsRaw, applicationCount, estimateCount] = await Promise.all([
+    prisma.job.findMany({
+      include: { score: true },
+      orderBy: { collectedAt: "desc" },
+    }),
+    prisma.job.findMany({
+      where: {
+        listingCategory: "eu_sponsorship",
+        NOT: { status: "rejected" },
+      },
+      include: { score: true },
+      orderBy: { collectedAt: "desc" },
+      take: 30,
+    }),
+    prisma.application.count(),
+    prisma.metric.count({ where: { OR: [{ isEstimate: true }, { needsReview: true }] } }),
+  ]);
 
-  const irelandPriority = scoredJobs
-    .filter((job) => (job.score?.totalScore ?? 0) >= 65)
+  const uniqueJobs = dedupeByUrl(allJobs);
+  const uniqueRejected = uniqueJobs.filter((j) => j.status === "rejected").length;
+  const uniqueScored = uniqueJobs.filter((j) =>
+    ["scored", "materials_ready", "saved"].includes(j.status),
+  ).length;
+  const irelandToday = uniqueJobs.filter(
+    (j) => j.listingCategory === "ireland_core" && j.collectedAt >= startOfDay,
+  ).length;
+
+  const irelandPriority = uniqueJobs
+    .filter((job) => {
+      if (job.listingCategory !== "ireland_core") return false;
+      if (!["scored", "materials_ready", "saved"].includes(job.status)) return false;
+      if ((job.score?.totalScore ?? 0) < 65) return false;
+      if (job.yearsRequired != null && job.yearsRequired >= 8) return false;
+      if (job.yearsRequired != null && job.yearsRequired >= 6 && /\bsenior\b/i.test(job.title)) {
+        return false;
+      }
+      return true;
+    })
+    .sort((a, b) => (b.score?.totalScore ?? 0) - (a.score?.totalScore ?? 0))
     .slice(0, batchTarget);
+
+  const euJobs = dedupeByUrl(euJobsRaw).slice(0, 15);
+  const hiddenDupes = allJobs.length - uniqueJobs.length;
 
   return (
     <div>
       <PageHeader
         title="Dashboard"
         description={`Daily Ireland batch target: ${batchTarget}. EU sponsorship is a separate exclusive track. Model A: prepare packs — you submit.`}
-        action={
-          <div className="flex flex-wrap items-start justify-end gap-2">
-            <DiscoverButton />
-            <Link
-              href="/approve"
-              className="rounded-md border border-line px-4 py-2 text-sm text-ink hover:border-accent/40"
-            >
-              Approve queue
-            </Link>
-            <Link
-              href="/jobs/new"
-              className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-canvas transition hover:bg-accent-dim"
-            >
-              Import job
-            </Link>
-          </div>
-        }
+        action={<DashboardActions />}
       />
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {[
-          { label: "Jobs ingested", value: jobCount },
-          { label: "Scored", value: scored },
+          { label: "Unique jobs", value: uniqueJobs.length },
+          { label: "In queue / scored", value: uniqueScored },
           { label: "Ireland added today", value: irelandToday },
-          { label: "Hard rejected", value: rejected },
+          { label: "Hard rejected", value: uniqueRejected },
           { label: "Applications", value: applicationCount },
         ].map((stat) => (
           <Panel key={stat.label} className="flex min-h-[108px] flex-col justify-between">
@@ -89,6 +94,13 @@ export default async function DashboardPage() {
           </Panel>
         ))}
       </div>
+
+      {hiddenDupes > 0 ? (
+        <p className="mb-4 text-xs text-ink-faint">
+          {hiddenDupes} duplicate listing(s) hidden from counts and the batch list. Open Jobs for the
+          full raw table.
+        </p>
+      ) : null}
 
       {estimateCount > 0 ? (
         <Panel className="mb-8 border-warn/30">
@@ -108,7 +120,12 @@ export default async function DashboardPage() {
 
       <Panel className="mb-6">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-display text-xl">Ireland / Dublin batch</h2>
+          <div>
+            <h2 className="font-display text-xl">Ireland / Dublin batch</h2>
+            <p className="mt-1 text-xs text-ink-faint">
+              Showing {irelandPriority.length} unique roles with score ≥ 65 (target {batchTarget}).
+            </p>
+          </div>
           <div className="flex gap-3 text-sm">
             <Link href="/approve" className="text-accent hover:underline">
               Approve →

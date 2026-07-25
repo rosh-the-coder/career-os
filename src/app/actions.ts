@@ -51,6 +51,42 @@ export async function rescoreJobAction(formData: FormData) {
   await scoreExistingJob(jobId);
   revalidatePath(`/jobs/${jobId}`);
   revalidatePath("/jobs");
+  revalidatePath("/approve");
+  revalidatePath("/dashboard");
+}
+
+/** Edit JD text; marks prior LLM score as stale so Approve shows Click again. */
+export async function updateJobDescriptionAction(
+  formData: FormData,
+): Promise<{ ok: boolean; error?: string }> {
+  const jobId = String(formData.get("jobId") ?? "");
+  const description = String(formData.get("description") ?? "").trim();
+  if (!jobId) return { ok: false, error: "Missing job id" };
+  if (!description) return { ok: false, error: "Description required" };
+
+  try {
+    await prisma.job.update({
+      where: { id: jobId },
+      data: {
+        descriptionRaw: description,
+        descriptionClean: description,
+      },
+    });
+    await prisma.jobScore.updateMany({
+      where: { jobId },
+      data: { modelVersion: "pending-llm" },
+    });
+    revalidatePath(`/jobs/${jobId}`);
+    revalidatePath("/approve");
+    revalidatePath("/jobs");
+    revalidatePath("/dashboard");
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Save failed",
+    };
+  }
 }
 
 export async function generateResumeAction(formData: FormData) {
@@ -133,6 +169,8 @@ export async function runDiscoveryAction(): Promise<{
   error?: string;
   irelandCoreAdded?: number;
   euSponsorshipAdded?: number;
+  skippedDuplicates?: number;
+  skippedFilters?: number;
   samples?: { title: string; company: string; score: number; category: string }[];
 }> {
   try {
@@ -145,6 +183,8 @@ export async function runDiscoveryAction(): Promise<{
       ok: true,
       irelandCoreAdded: result.irelandCoreAdded,
       euSponsorshipAdded: result.euSponsorshipAdded,
+      skippedDuplicates: result.skippedDuplicates,
+      skippedFilters: result.skippedFilters,
       samples: result.samples,
     };
   } catch (err) {
@@ -158,7 +198,12 @@ export async function runDiscoveryAction(): Promise<{
 export async function prepareResumePacksAction(formData: FormData) {
   const ids = formData.getAll("jobIds").map(String).filter(Boolean);
   if (!ids.length) {
-    return { ok: false as const, error: "Select at least one job", prepared: 0, failed: [] as string[] };
+    return {
+      ok: false as const,
+      error: "Select at least one job",
+      prepared: 0,
+      failed: [] as { id: string; error: string }[],
+    };
   }
 
   const prepared: string[] = [];

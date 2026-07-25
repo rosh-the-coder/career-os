@@ -74,15 +74,16 @@ export interface JobScoreResult {
 }
 
 export const SCORE_WEIGHTS = {
-  skillsOverlap: 22,
-  evidenceStrength: 18,
-  projectRelevance: 15,
-  seniorityFit: 12,
-  currentEligibility: 12,
-  longTermPermit: 8,
-  locationFit: 5,
-  salaryFit: 4,
-  careerAlignment: 4,
+  skillsOverlap: 20,
+  evidenceStrength: 16,
+  projectRelevance: 14,
+  /** Heavy weight — Senior / 5+ YOE must not score like mid UX roles */
+  seniorityFit: 22,
+  currentEligibility: 10,
+  longTermPermit: 6,
+  locationFit: 6,
+  salaryFit: 3,
+  careerAlignment: 3,
 } as const;
 
 export const PROFILE_KEYS = [

@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { importJobAction, type ActionState } from "@/app/actions";
+import { JdTextareaField } from "@/components/jd-word-meter";
 import { PageHeader, Panel } from "@/components/ui";
 
 const initial: ActionState = {};
@@ -18,9 +19,11 @@ export default function ImportJobPage() {
 
       <Panel className="mb-4 border-info/30">
         <p className="text-sm text-ink-muted">
-          <span className="font-medium text-info">URL tip:</span> Greenhouse, Lever, Ashby, and many
-          company career pages auto-fetch. Indeed / LinkedIn / Glassdoor return 403 if fetched alone —
-          paste the JD text + URL and CareerOS will score and track it (Model A: you still submit).
+          <span className="font-medium text-info">Glassdoor / LinkedIn / Indeed:</span> we never scrape
+          those sites (antibot + account bans). Instead CareerOS finds roles from company boards + job
+          aggregators, then can <em>verify</em> they also appear on LinkedIn/Indeed/Glassdoor via a
+          search API (Brave/SerpAPI) — index check only. Deloitte-style listings: open the post → copy
+          JD → paste here with the URL. Gmail job alerts (later) are the cleanest LinkedIn path.
         </p>
       </Panel>
 
@@ -73,13 +76,7 @@ export default function ImportJobPage() {
           </label>
           <label className="block text-sm">
             <span className="mb-1.5 block text-ink-muted">Job description</span>
-            <textarea
-              name="description"
-              rows={16}
-              required
-              className="w-full rounded-md border border-line bg-canvas px-3 py-2 font-mono text-sm text-ink outline-none focus:border-accent/50"
-              placeholder="Paste the full job description here (required for Indeed/LinkedIn)…"
-            />
+            <JdTextareaField name="description" required rows={16} />
           </label>
           <button
             type="submit"

@@ -1,4 +1,5 @@
 import type { Requirement } from "@/lib/types";
+import { inferYearsRequired } from "@/lib/scoring/hard-filters";
 
 export interface ParsedJobFields {
   company: string;
@@ -37,9 +38,7 @@ function detectRemoteType(text: string): ParsedJobFields["remoteType"] {
 }
 
 function detectYears(text: string): number | undefined {
-  const m = text.match(/(\d+)\+?\s*(\+|plus)?\s*years?/i);
-  if (!m) return undefined;
-  return Number(m[1]);
+  return inferYearsRequired(text);
 }
 
 function detectSalary(text: string): {

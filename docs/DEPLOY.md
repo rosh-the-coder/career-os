@@ -94,6 +94,16 @@ npm run dev
 6. Add the Vercel URL to Supabase Auth redirect allowlist
 7. Open `/login` → magic link → dashboard
 
+**Vercel does not pick up localhost edits.** It rebuilds only when you push to the connected GitHub branch (or trigger a deploy). Local `npm run dev` and `career-os-*.vercel.app` are separate until you commit + push.
+
+Optional env for richer discovery / board verify:
+
+| Name | Value |
+|---|---|
+| `ADZUNA_APP_ID` / `ADZUNA_APP_KEY` | Aggregator jobs (Ireland) |
+| `BRAVE_SEARCH_API_KEY` or `SERPAPI_KEY` | Search-index verify LinkedIn/Indeed/Glassdoor |
+| `RESUME_DETERMINISTIC_ONLY` | `true` to skip Gemini entirely |
+
 Build command (already in `package.json`):
 
 ```text

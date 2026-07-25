@@ -2,6 +2,8 @@ import { prisma } from "@/lib/db/prisma";
 import { fetchJobUrl, JobFetchError, isLikelyBlockedJobHost } from "@/lib/jobs/fetch-url";
 import { parseJobText } from "@/lib/jobs/parse-job";
 import { scoreJob } from "@/lib/scoring/score-job";
+import { inferYearsRequired } from "@/lib/scoring/hard-filters";
+import { mergeHeuristicWithJudge, runLlmJudge } from "@/lib/scoring/llm-judge";
 import { parseJsonArray } from "@/lib/utils";
 import type { ProfileKey } from "@/lib/types";
 export { getPrimaryUser } from "@/lib/auth/user";
@@ -78,6 +80,17 @@ export async function importAndScoreJob(input: {
     );
   }
 
+  // Avoid duplicate rows when discovery / import hits the same listing URL twice
+  if (input.url) {
+    const existing = await prisma.job.findFirst({
+      where: { userId: user.id, url: input.url },
+      include: { score: true },
+    });
+    if (existing) {
+      return scoreExistingJob(existing.id);
+    }
+  }
+
   const parsed = parseJobText({
     description,
     title,
@@ -141,7 +154,7 @@ export async function scoreExistingJob(jobId: string) {
     prisma.evidenceItem.findMany({ where: { userId: user.id } }),
   ]);
 
-  const result = scoreJob({
+  const ctx = {
     job: {
       title: job.title,
       company: job.company,
@@ -158,9 +171,9 @@ export async function scoreExistingJob(jobId: string) {
       salaryMin: job.salaryMin,
       salaryMax: job.salaryMax,
       salaryCurrency: job.salaryCurrency,
-      keywords: parseJsonArray(job.keywordsJson),
-      requirements: parseJsonArray(job.requirementsJson),
-      responsibilities: parseJsonArray(job.responsibilitiesJson),
+      keywords: parseJsonArray<string>(job.keywordsJson),
+      requirements: parseJsonArray<{ text: string; kind: string }>(job.requirementsJson),
+      responsibilities: parseJsonArray<string>(job.responsibilitiesJson),
     },
     settings: {
       includeFallbackVideoRoles: user.settings.includeFallbackVideoRoles,
@@ -196,7 +209,11 @@ export async function scoreExistingJob(jobId: string) {
       verified: e.verified,
     })),
     defaultProfileKey: profiles.find((p) => p.isDefault)?.key ?? "ux_engineer",
-  });
+  };
+
+  const heuristic = scoreJob(ctx);
+  const judge = await runLlmJudge(ctx, heuristic);
+  const result = mergeHeuristicWithJudge(heuristic, judge);
 
   const profile = profiles.find((p) => p.key === result.recommendedProfileKey);
 
@@ -204,11 +221,17 @@ export async function scoreExistingJob(jobId: string) {
     job.softFlagsJson,
   ).filter((f) => f.code === "url_fetch_fallback");
 
+  const correctedYears = inferYearsRequired(job.descriptionClean || job.descriptionRaw);
+  const modelVersion = result.judgeMeta.used
+    ? `llm-judge:${result.judgeMeta.provider}:${result.judgeMeta.model}`
+    : "deterministic-v1";
+
   await prisma.job.update({
     where: { id: job.id },
     data: {
       status: result.hardRejected ? "rejected" : "scored",
-      hardRejectReason: result.hardRejectReason,
+      hardRejectReason: result.hardRejected ? result.hardRejectReason : null,
+      yearsRequired: correctedYears ?? null,
       softFlagsJson: JSON.stringify([...priorFlags, ...result.softFlags]),
     },
   });
@@ -234,8 +257,8 @@ export async function scoreExistingJob(jobId: string) {
       eligibilityFuture: result.eligibilityFuture,
       recommendedProjectsJson: JSON.stringify(result.recommendedProjects),
       evidenceUsedJson: JSON.stringify(result.evidenceUsed),
-      explanationJson: JSON.stringify(result),
-      modelVersion: "deterministic-v1",
+      explanationJson: JSON.stringify({ ...result, judgeMeta: result.judgeMeta }),
+      modelVersion,
     },
     update: {
       profileId: profile?.id,
@@ -255,8 +278,8 @@ export async function scoreExistingJob(jobId: string) {
       eligibilityFuture: result.eligibilityFuture,
       recommendedProjectsJson: JSON.stringify(result.recommendedProjects),
       evidenceUsedJson: JSON.stringify(result.evidenceUsed),
-      explanationJson: JSON.stringify(result),
-      modelVersion: "deterministic-v1",
+      explanationJson: JSON.stringify({ ...result, judgeMeta: result.judgeMeta }),
+      modelVersion,
       scoredAt: new Date(),
     },
   });

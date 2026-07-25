@@ -8,7 +8,7 @@ export function DiscoverButton() {
   const [message, setMessage] = useState<string | null>(null);
 
   return (
-    <div className="flex flex-col items-end gap-2">
+    <>
       <button
         type="button"
         disabled={pending}
@@ -20,16 +20,24 @@ export function DiscoverButton() {
               setMessage(result.error ?? "Discovery failed");
               return;
             }
+            const ie = result.irelandCoreAdded ?? 0;
+            const eu = result.euSponsorshipAdded ?? 0;
+            const skipped = result.skippedDuplicates ?? 0;
             setMessage(
-              `Added ${result.irelandCoreAdded ?? 0} Ireland + ${result.euSponsorshipAdded ?? 0} EU sponsorship roles.`,
+              ie + eu === 0
+                ? `No new Ireland roles (already ingested or filtered). ${skipped ? `${skipped} duplicates skipped. ` : ""}Import Glassdoor/Indeed via paste.`
+                : `Added ${ie} Ireland + ${eu} EU sponsorship roles.`,
             );
           });
         }}
-        className="rounded-md border border-line bg-panel-2 px-4 py-2 text-sm text-ink hover:border-accent/40 disabled:opacity-60"
+        className="inline-flex min-w-[11.5rem] shrink-0 items-center justify-center rounded-md border border-line bg-panel-2 px-4 py-2 text-sm text-ink hover:border-accent/40 disabled:opacity-60"
       >
         {pending ? "Discovering…" : "Run daily discovery"}
       </button>
-      {message ? <p className="max-w-xs text-right text-xs text-ink-muted">{message}</p> : null}
-    </div>
+      {/* Full-width next row so Approve / Import never shift */}
+      {message ? (
+        <p className="basis-full text-right text-xs text-ink-muted">{message}</p>
+      ) : null}
+    </>
   );
 }
