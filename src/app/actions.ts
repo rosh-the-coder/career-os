@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { importAndScoreJob, scoreExistingJob } from "@/lib/jobs/service";
 import { JobFetchError } from "@/lib/jobs/fetch-url";
-import { generateResumeForJob } from "@/lib/resume/service";
+import { generateResumeForJob, analyzeResumeKeywordsForJob, suggestResumeAtsEditsForJob, applyResumeAtsEditsForJob } from "@/lib/resume/service";
 import { prisma } from "@/lib/db/prisma";
 import { getPrimaryUser } from "@/lib/auth/user";
 
@@ -95,7 +95,51 @@ export async function generateResumeAction(formData: FormData) {
   await generateResumeForJob(jobId, pageLength);
   revalidatePath(`/jobs/${jobId}`);
   revalidatePath("/resume-studio");
-  redirect("/resume-studio");
+  redirect(`/jobs/${jobId}`);
+}
+
+export async function analyzeResumeKeywordsAction(formData: FormData): Promise<{ ok: boolean; error?: string }> {
+  const jobId = String(formData.get("jobId"));
+  const resumeVersionId = String(formData.get("resumeVersionId") ?? "") || undefined;
+  try {
+    await analyzeResumeKeywordsForJob(jobId, resumeVersionId);
+    revalidatePath(`/jobs/${jobId}`);
+    revalidatePath("/resume-studio");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Analyze failed" };
+  }
+}
+
+export async function suggestResumeAtsEditsAction(formData: FormData): Promise<{ ok: boolean; error?: string }> {
+  const jobId = String(formData.get("jobId"));
+  const resumeVersionId = String(formData.get("resumeVersionId") ?? "") || undefined;
+  try {
+    await suggestResumeAtsEditsForJob(jobId, resumeVersionId);
+    revalidatePath(`/jobs/${jobId}`);
+    revalidatePath("/resume-studio");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Suggest failed" };
+  }
+}
+
+export async function applyResumeAtsEditsAction(formData: FormData): Promise<{ ok: boolean; error?: string }> {
+  const jobId = String(formData.get("jobId"));
+  const resumeVersionId = String(formData.get("resumeVersionId"));
+  const indexes = formData
+    .getAll("editIndex")
+    .map((v) => Number(v))
+    .filter((n) => Number.isInteger(n) && n >= 0);
+  try {
+    await applyResumeAtsEditsForJob(jobId, resumeVersionId, indexes);
+    revalidatePath(`/jobs/${jobId}`);
+    revalidatePath("/resume-studio");
+    revalidatePath("/approve");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Apply failed" };
+  }
 }
 
 export async function recordApplicationAction(formData: FormData) {

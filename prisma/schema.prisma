@@ -263,6 +263,7 @@ model ResumeVersion {
   docxPath         String?
   pdfPath          String?
   fileName         String?
+  optimizeJson     String?  // CV↔JD keyword coverage + edit suggestions cache
   createdAt        DateTime @default(now())
 
   applications Application[]

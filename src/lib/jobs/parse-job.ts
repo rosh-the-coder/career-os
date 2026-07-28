@@ -1,5 +1,6 @@
 import type { Requirement } from "@/lib/types";
 import { inferYearsRequired } from "@/lib/scoring/hard-filters";
+import { TECH_KEYWORDS } from "@/lib/jobs/tech-terms";
 
 export interface ParsedJobFields {
   company: string;
@@ -83,34 +84,6 @@ function extractSectionBullets(text: string, headers: RegExp[]): string[] {
   }
   return bullets.slice(0, 40);
 }
-
-const TECH_KEYWORDS = [
-  "React",
-  "TypeScript",
-  "JavaScript",
-  "Next.js",
-  "Node.js",
-  "Python",
-  "Figma",
-  "Tailwind",
-  "CSS",
-  "HTML",
-  "AWS",
-  "Azure",
-  "GCP",
-  "GraphQL",
-  "REST",
-  "Accessibility",
-  "Design systems",
-  "UX",
-  "UI",
-  "Prototyping",
-  "Playwright",
-  "Firebase",
-  "Streamlit",
-  "AI",
-  "Automation",
-];
 
 export function parseJobText(input: {
   description: string;

@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { generateResumeAction, recordApplicationAction, rescoreJobAction } from "@/app/actions";
+import { CvKeywordFit } from "@/components/cv-keyword-fit";
 import { JobDescriptionEditor } from "@/components/job-description-editor";
 import { EstimateTooltip, PageHeader, Panel, ScoreBadge, StatusPill } from "@/components/ui";
 import { prisma } from "@/lib/db/prisma";
 import { computeParseConfidence, isLlmScored } from "@/lib/jobs/jd-meta";
+import { parseOptimizeCache } from "@/lib/resume/ats-optimize";
 import { SCORE_WEIGHTS } from "@/lib/types";
 import { parseJsonArray } from "@/lib/utils";
 
@@ -36,6 +38,8 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
   const rateLimitFlag = softFlags.find(
     (f) => f.code === "llm_rate_limit" || /rate limit|trim the job/i.test(f.message),
   );
+  const latestResume = job.resumeVersions[0] ?? null;
+  const optimizeCache = latestResume ? parseOptimizeCache(latestResume.optimizeJson) : null;
 
   return (
     <div>
@@ -254,6 +258,57 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
           </ul>
         </Panel>
       </div>
+
+      {job.resumeVersions.length ? (
+        <Panel className="mb-6">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="font-display text-xl">Generated CVs</h2>
+            <Link href="/resume-studio" className="text-sm text-accent hover:underline">
+              Open Resume Studio
+            </Link>
+          </div>
+          <ul className="space-y-2">
+            {job.resumeVersions.map((v) => (
+              <li
+                key={v.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line bg-panel-2/60 px-3 py-2 text-sm"
+              >
+                <div>
+                  <span className="text-ink">{v.fileName ?? v.id}</span>
+                  <span className="ml-2 font-mono text-[10px] uppercase text-ink-faint">
+                    {v.pageLength}-page · {v.promptVersion}
+                    {latestResume?.id === v.id ? " · latest" : ""}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <a
+                    href={`/api/resumes/${v.id}/download?format=docx`}
+                    className="rounded-md border border-line px-2.5 py-1 text-xs hover:border-accent/40"
+                  >
+                    DOCX
+                  </a>
+                  <a
+                    href={`/api/resumes/${v.id}/download?format=pdf`}
+                    className="rounded-md border border-line px-2.5 py-1 text-xs hover:border-accent/40"
+                  >
+                    PDF
+                  </a>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      ) : null}
+
+      {latestResume ? (
+        <Panel className="mb-6">
+          <CvKeywordFit
+            jobId={job.id}
+            resumeVersionId={latestResume.id}
+            initialCache={optimizeCache}
+          />
+        </Panel>
+      ) : null}
 
       <Panel>
         <div className="mb-3 flex justify-end">

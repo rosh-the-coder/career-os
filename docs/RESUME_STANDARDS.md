@@ -23,6 +23,16 @@ Extracted from:
 - No photos, icons, skill bars, multi-column tables
 - Truthful metrics only; label estimates
 
+## CV ↔ JD keyword fit (in-app)
+
+On a job detail page after generating a CV:
+
+1. **Analyze keywords** — deterministic overlap of that CV’s text vs JD terms (matched / missing / %). Labeled keyword overlap, not a vendor ATS score.
+2. **Suggest edits** — optional LLM rewrites of existing bullets only; claim-validated; max 8.
+3. **Apply selected** — checkboxes create a new `ResumeVersion` (DOCX/PDF). Original kept.
+
+Cache lives on `ResumeVersion.optimizeJson`. Code: `src/lib/resume/ats-optimize.ts`, UI: job detail **CV keyword fit** panel.
+
 ## ChatGPT rewrite prompts
 
 See `docs/CHATGPT_RESUME_PROMPTS.md` — one prompt per profile variant.

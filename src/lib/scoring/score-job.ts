@@ -7,6 +7,7 @@ import {
   type SoftFlag,
 } from "@/lib/types";
 import { inferYearsRequired, runHardFilters, type FilterableJob, type FilterSettings } from "@/lib/scoring/hard-filters";
+import { TECH_HINTS } from "@/lib/jobs/tech-terms";
 
 export interface ScoringProfile {
   key: ProfileKey | string;
@@ -104,37 +105,11 @@ function skillOverlapScore(ctx: ScoringContext, corpus: string): {
     if (hit) matched.push(skill.name);
   }
 
-  // Extract likely required tech tokens from job for gap detection
-  const techHints = [
-    "react",
-    "typescript",
-    "javascript",
-    "next.js",
-    "nextjs",
-    "tailwind",
-    "figma",
-    "python",
-    "node.js",
-    "aws",
-    "azure",
-    "gcp",
-    "graphql",
-    "vue",
-    "angular",
-    "swift",
-    "kotlin",
-    "java ",
-    "c++",
-    "rust",
-    "docker",
-    "kubernetes",
-  ];
-
   const owned = new Set(
     ctx.skills.flatMap((s) => [s.name.toLowerCase(), ...s.keywords.map((k) => k.toLowerCase())]),
   );
 
-  for (const hint of techHints) {
+  for (const hint of TECH_HINTS) {
     if (corpus.includes(hint.trim()) && ![...owned].some((o) => o.includes(hint.trim()) || hint.trim().includes(o))) {
       // only flag if present in job and not owned
       const ownedHit = [...owned].some((o) => corpus.includes(o) && (o.includes(hint.trim()) || hint.includes(o)));
@@ -149,7 +124,7 @@ function skillOverlapScore(ctx: ScoringContext, corpus: string): {
 
   // Simpler missing detection: tech hints in job not in skill inventory
   const missingClean: string[] = [];
-  for (const hint of techHints) {
+  for (const hint of TECH_HINTS) {
     const h = hint.trim();
     if (!corpus.includes(h)) continue;
     const has = [...owned].some((o) => o === h || o.includes(h) || h.includes(o));
