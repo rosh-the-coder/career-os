@@ -1,22 +1,12 @@
 import Link from "next/link";
+import { SidebarNav } from "@/components/sidebar-nav";
 import { isDevAuthBypass } from "@/lib/auth/supabase";
-
-const NAV = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/jobs", label: "Jobs" },
-  { href: "/approve", label: "Approve" },
-  { href: "/jobs/new", label: "Import" },
-  { href: "/profiles", label: "Profiles" },
-  { href: "/resume-studio", label: "Resume Studio" },
-  { href: "/applications", label: "Applications" },
-  { href: "/settings", label: "Settings" },
-];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const bypass = isDevAuthBypass();
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-7xl gap-8 px-4 py-6 md:px-8">
+    <div className="mx-auto flex min-h-screen max-w-[1600px] gap-8 px-4 py-6 md:px-8">
       <aside className="hidden w-52 shrink-0 flex-col md:flex">
         <Link href="/dashboard" className="mb-10 block">
           <div className="font-display text-2xl tracking-tight text-ink">CareerOS</div>
@@ -24,17 +14,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             Targeted Job Hunter
           </div>
         </Link>
-        <nav className="flex flex-1 flex-col gap-1">
-          {NAV.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="rounded-md px-3 py-2 text-sm text-ink-muted transition-colors hover:bg-panel-2 hover:text-ink"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <SidebarNav />
         <div className="mt-auto space-y-2 border-t border-line pt-4">
           {!bypass ? (
             <form action="/auth/signout" method="post">

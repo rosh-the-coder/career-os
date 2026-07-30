@@ -10,10 +10,19 @@ import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import type { ResumeDraft, ResumeGenerationInput } from "@/lib/ai/types";
 
+export interface ResumeLinkUrls {
+  linkedinUrl?: string;
+  portfolioUrl?: string;
+  githubUrl?: string;
+}
+
 export interface AtsResumeContent {
   documentTitle: string;
   contactLine: string;
+  /** DOCX / markdown: includes full URLs for ATS parsers */
   linksLine: string;
+  /** PDF: clickable labels without spelling out URLs */
+  linkUrls?: ResumeLinkUrls;
   profile: string;
   skills: string[];
   projects: {
@@ -36,16 +45,49 @@ export interface AtsResumeContent {
   technicalStack: { group: string; items: string }[];
 }
 
+export function buildLinksLine(urls: ResumeLinkUrls): string {
+  const parts: string[] = [];
+  if (urls.linkedinUrl) parts.push(`LinkedIn (${urls.linkedinUrl})`);
+  if (urls.portfolioUrl) parts.push(`Portfolio Website (${urls.portfolioUrl})`);
+  if (urls.githubUrl) parts.push(`Github (${urls.githubUrl})`);
+  return parts.length ? `LINKS ${parts.join(", ")}` : "LINKS";
+}
+
+/** Normalize "LINKS LinkedIn (url), Portfolio Website (url), Github (url)" */
+export function parseLinkUrlsFromLine(linksLine: string): ResumeLinkUrls {
+  const linkedin = linksLine.match(/LinkedIn\s*\((https?:\/\/[^)]+)\)/i)?.[1];
+  const portfolio = linksLine.match(/Portfolio(?:\s+Website)?\s*\((https?:\/\/[^)]+)\)/i)?.[1];
+  const github = linksLine.match(/Github\s*\((https?:\/\/[^)]+)\)/i)?.[1];
+  return {
+    linkedinUrl: linkedin,
+    portfolioUrl: portfolio,
+    githubUrl: github,
+  };
+}
+
+export function resolveLinkUrls(content: AtsResumeContent): ResumeLinkUrls {
+  if (content.linkUrls?.linkedinUrl || content.linkUrls?.portfolioUrl || content.linkUrls?.githubUrl) {
+    return content.linkUrls;
+  }
+  return parseLinkUrlsFromLine(content.linksLine);
+}
+
 export function toAtsContent(
   draft: ResumeDraft,
   contact: ResumeGenerationInput["contact"] & { phone?: string },
   profileName: string,
 ): AtsResumeContent {
   const phone = contact.phone ?? "+353 838501604";
+  const linkUrls: ResumeLinkUrls = {
+    linkedinUrl: contact.linkedinUrl,
+    portfolioUrl: contact.portfolioUrl,
+    githubUrl: contact.githubUrl,
+  };
   return {
     documentTitle: `ROSHAN NAJAR, ${profileName}`,
     contactLine: `County Dublin, Ireland, ${phone}, ${contact.email}`,
-    linksLine: `LINKS LinkedIn, Portfolio Website (${contact.portfolioUrl}), Github (${contact.githubUrl})`,
+    linksLine: buildLinksLine(linkUrls),
+    linkUrls,
     profile: draft.summary,
     skills: draft.skills,
     projects: draft.projects.map((p) => ({
@@ -212,7 +254,6 @@ export async function generateDocxAndPdf(
   await writeFile(docxPath, buffer);
   await writeFile(markdownPath, markdown, "utf8");
 
-  // PDF is nice-to-have — never fail the whole pack if PDFKit chokes
   let writtenPdf: string | null = pdfPath;
   try {
     const pdfBuf = await buildAtsPdfBuffer(content);
@@ -225,60 +266,109 @@ export async function generateDocxAndPdf(
   return { docxPath, pdfPath: writtenPdf, markdownPath };
 }
 
-function buildAtsPdfBuffer(content: AtsResumeContent): Promise<Buffer> {
+/** Build PDF bytes in memory (used by export + download route). */
+export function buildAtsPdfBuffer(content: AtsResumeContent): Promise<Buffer> {
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({
-      size: "A4",
-      margins: { top: 40, bottom: 40, left: 48, right: 48 },
-    });
-    const chunks: Buffer[] = [];
-    doc.on("data", (chunk: Buffer) => chunks.push(chunk));
-    doc.on("end", () => resolve(Buffer.concat(chunks)));
-    doc.on("error", reject);
+    try {
+      const doc = new PDFDocument({
+        size: "A4",
+        margins: { top: 40, bottom: 40, left: 48, right: 48 },
+        autoFirstPage: true,
+      });
+      const chunks: Buffer[] = [];
+      doc.on("data", (chunk: Buffer) => chunks.push(chunk));
+      doc.on("end", () => resolve(Buffer.concat(chunks)));
+      doc.on("error", reject);
 
-    const write = (text: string, opts?: { bold?: boolean; size?: number; gap?: number }) => {
-      doc
-        .font(opts?.bold ? "Helvetica-Bold" : "Helvetica")
-        .fontSize(opts?.size ?? 10)
-        .fillColor("#111")
-        .text(text, { width: doc.page.width - 96 });
-      doc.moveDown(opts?.gap ?? 0.35);
-    };
+      const pageWidth = doc.page.width - doc.page.margins.left - doc.page.margins.right;
 
-    write(content.documentTitle, { bold: true, size: 14, gap: 0.2 });
-    write(content.contactLine, { size: 9, gap: 0.15 });
-    write(content.linksLine, { size: 9, gap: 0.6 });
-    write("PROFILE", { bold: true, size: 11 });
-    write(content.profile, { gap: 0.55 });
-    write("SKILLS", { bold: true, size: 11 });
-    write(content.skills.join(" · "), { gap: 0.55 });
-    write("SELECTED PROJECTS", { bold: true, size: 11 });
-    for (const p of content.projects) {
-      write(`${p.dates ? p.dates + "  " : ""}${p.name}`, { bold: true, gap: 0.15 });
-      if (p.blurb) write(p.blurb, { size: 9, gap: 0.12 });
-      if (p.links) write(p.links, { size: 9, gap: 0.1 });
-      write(`Role: ${p.role}`, { size: 9, gap: 0.15 });
-      for (const b of p.bullets) write(`• ${b}`, { size: 9.5, gap: 0.12 });
-      doc.moveDown(0.25);
+      const write = (text: string, opts?: { bold?: boolean; size?: number; gap?: number }) => {
+        doc
+          .font(opts?.bold ? "Helvetica-Bold" : "Helvetica")
+          .fontSize(opts?.size ?? 10)
+          .fillColor("#111111")
+          .text(text, { width: pageWidth });
+        doc.moveDown(opts?.gap ?? 0.35);
+      };
+
+      write(content.documentTitle, { bold: true, size: 14, gap: 0.2 });
+      write(content.contactLine, { size: 9, gap: 0.2 });
+      writePdfLinksRow(doc, resolveLinkUrls(content), pageWidth);
+      doc.moveDown(0.45);
+
+      write("PROFILE", { bold: true, size: 11 });
+      write(content.profile, { gap: 0.55 });
+      write("SKILLS", { bold: true, size: 11 });
+      write(content.skills.join(" · "), { gap: 0.55 });
+      write("SELECTED PROJECTS", { bold: true, size: 11 });
+      for (const p of content.projects) {
+        write(`${p.dates ? p.dates + "  " : ""}${p.name}`, { bold: true, gap: 0.15 });
+        if (p.blurb) write(p.blurb, { size: 9, gap: 0.12 });
+        // Skip placeholder "[Website LINK]" noise in PDF — real URLs live in header links
+        write(`Role: ${p.role}`, { size: 9, gap: 0.15 });
+        for (const b of p.bullets) write(`• ${b}`, { size: 9.5, gap: 0.12 });
+        doc.moveDown(0.25);
+      }
+      write("PROFESSIONAL EXPERIENCE", { bold: true, size: 11 });
+      for (const e of content.experiences) {
+        write(
+          `${e.dates}  ${e.title}, ${e.company}${e.location ? ` — ${e.location}` : ""}`,
+          { bold: true, gap: 0.15 },
+        );
+        if (e.companyBlurb) write(e.companyBlurb, { size: 9, gap: 0.12 });
+        for (const b of e.bullets) write(`• ${b}`, { size: 9.5, gap: 0.12 });
+        doc.moveDown(0.2);
+      }
+      write("EDUCATION", { bold: true, size: 11 });
+      for (const ed of content.education) write(`${ed.dates ? ed.dates + " " : ""}${ed.line}`, { size: 9.5 });
+      doc.moveDown(0.3);
+      write("TECHNICAL STACK", { bold: true, size: 11 });
+      for (const t of content.technicalStack) write(`${t.group}: ${t.items}`, { size: 9, gap: 0.12 });
+
+      doc.end();
+    } catch (err) {
+      reject(err);
     }
-    write("PROFESSIONAL EXPERIENCE", { bold: true, size: 11 });
-    for (const e of content.experiences) {
-      write(
-        `${e.dates}  ${e.title}, ${e.company}${e.location ? ` — ${e.location}` : ""}`,
-        { bold: true, gap: 0.15 },
-      );
-      if (e.companyBlurb) write(e.companyBlurb, { size: 9, gap: 0.12 });
-      for (const b of e.bullets) write(`• ${b}`, { size: 9.5, gap: 0.12 });
-      doc.moveDown(0.2);
-    }
-    write("EDUCATION", { bold: true, size: 11 });
-    for (const ed of content.education) write(`${ed.dates ? ed.dates + " " : ""}${ed.line}`, { size: 9.5 });
-    doc.moveDown(0.3);
-    write("TECHNICAL STACK", { bold: true, size: 11 });
-    for (const t of content.technicalStack) write(`${t.group}: ${t.items}`, { size: 9, gap: 0.12 });
-
-    doc.end();
   });
+}
+
+/** "LINKS LinkedIn, Portfolio Website, Github" with embedded hyperlinks — no raw URLs. */
+function writePdfLinksRow(
+  doc: InstanceType<typeof PDFDocument>,
+  urls: ResumeLinkUrls,
+  pageWidth: number,
+) {
+  const items: { label: string; href: string }[] = [];
+  if (urls.linkedinUrl) items.push({ label: "LinkedIn", href: urls.linkedinUrl });
+  if (urls.portfolioUrl) items.push({ label: "Portfolio Website", href: urls.portfolioUrl });
+  if (urls.githubUrl) items.push({ label: "Github", href: urls.githubUrl });
+
+  doc.font("Helvetica").fontSize(9);
+
+  if (!items.length) {
+    doc.fillColor("#111111").text("LINKS", { width: pageWidth });
+    return;
+  }
+
+  doc.fillColor("#111111").text("LINKS ", {
+    continued: true,
+    width: pageWidth,
+  });
+
+  items.forEach((item, i) => {
+    const isLast = i === items.length - 1;
+    doc.fillColor("#0B57D0").text(item.label, {
+      link: item.href,
+      underline: true,
+      continued: true,
+    });
+    if (!isLast) {
+      doc.fillColor("#111111").text(", ", { continued: true });
+    }
+  });
+
+  // End the continued text run
+  doc.fillColor("#111111").text("");
 }
 
 /** @deprecated use generateDocxAndPdf */

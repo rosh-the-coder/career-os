@@ -22,6 +22,8 @@ Extracted from:
 - Single column, Calibri/Helvetica, selectable text
 - No photos, icons, skill bars, multi-column tables
 - Truthful metrics only; label estimates
+- **DOCX:** LINKS line includes full URLs (ATS-friendly plain text)
+- **PDF:** LINKS shows LinkedIn / Portfolio Website / Github as clickable hyperlinks — no raw URL text
 
 ## CV ↔ JD keyword fit (in-app)
 

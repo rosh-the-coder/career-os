@@ -269,14 +269,41 @@ export function inferYearsRequired(text: string): number | undefined {
   const COMPANY_AGE =
     /\b(in business|as a (great )?place|celebrat|anniversary|established|founded|for over \d+ years|years of (excellence|success|service|innovation|partnership)|trusted for \d+|operating for)\b/i;
 
+  // Negation / new-grad marketing: "nobody has 10 years…", "don't need 5 years…"
+  const YOE_DENIAL =
+    /\b(nobody|no[\s-]?one|no[\s-]?body|none|not|n't|never|without|lack(?:s|ing)?|don'?t|do\s+not|does\s+not|doesn'?t|won'?t|will\s+not|need\s+not|no\s+need)\b.{0,40}\b\d+\s*\+?\s*years?/i;
+
+  const YOE_DENIAL_AFTER =
+    /\b\d+\s*\+?\s*years?.{0,40}\b(not\s+required|not\s+needed|isn'?t\s+required|aren'?t\s+required|not\s+necessary|is\s+not\s+required)\b/i;
+
+  // "new frontier / this space" disclaimers that deny prior YOE existence
+  const FRONTIER_DISCLAIMER =
+    /\b(nobody|no[\s-]?one).{0,30}\b\d+\s*\+?\s*years?.{0,40}\b(new\s+frontier|this\s+(field|space|domain|area|era)|agentic|emerging)\b/i;
+
   const candidates: number[] = [];
 
-  const consider = (n: number, context: string) => {
+  const consider = (n: number, matchText: string, window: string) => {
     if (!Number.isFinite(n) || n < 1 || n > 15) return; // >15 almost never a real mid-band ask
-    if (COMPANY_AGE.test(context)) return;
-    // "10+ years as a Great Place to Work" / award copy
-    if (/\byears?\s+as\s+a\b/i.test(context)) return;
+    // Company-age / award fluff — check tight match text only (wide window false-positives nearby real asks)
+    if (COMPANY_AGE.test(matchText)) return;
+    if (/\byears?\s+as\s+a\b/i.test(matchText)) return;
+    // Negation / marketing disclaimers need surrounding context
+    if (YOE_DENIAL.test(window) || YOE_DENIAL_AFTER.test(window) || FRONTIER_DISCLAIMER.test(window)) {
+      return;
+    }
     candidates.push(n);
+  };
+
+  const windowAround = (index: number, matchLen: number) => {
+    const start = Math.max(0, index - 50);
+    const end = Math.min(raw.length, index + matchLen + 70);
+    return raw.slice(start, end);
+  };
+
+  /** Match + short trailing span — enough for "years as a Great Place" / "years in business". */
+  const matchWithTail = (index: number, matchLen: number) => {
+    const end = Math.min(raw.length, index + matchLen + 40);
+    return raw.slice(index, end);
   };
 
   // Explicit experience asks (strongest)
@@ -284,25 +311,28 @@ export function inferYearsRequired(text: string): number | undefined {
     /(\d+)\s*[-–—]\s*(\d+)\s*years?(?:\s+of)?(?:\s+[\w/-]+){0,5}\s+experience\b/gi,
   )) {
     // Use lower bound of range as the requirement floor (4-6 → 4)
-    consider(Number(m[1]), m[0]);
+    const idx = m.index ?? 0;
+    consider(Number(m[1]), matchWithTail(idx, m[0].length), windowAround(idx, m[0].length));
   }
   for (const m of raw.matchAll(
     /(?<![\d])(\d+)\s*\+\s*years?(?:\s+of)?(?:\s+[\w/-]+){0,5}\s+experience\b/gi,
   )) {
-    consider(Number(m[1]), m[0]);
+    const idx = m.index ?? 0;
+    consider(Number(m[1]), matchWithTail(idx, m[0].length), windowAround(idx, m[0].length));
   }
   for (const m of raw.matchAll(
     /(?<![\d-–—])(\d+)\s+years?(?:\s+of)?(?:\s+[\w/-]+){0,5}\s+experience\b/gi,
   )) {
-    consider(Number(m[1]), m[0]);
+    const idx = m.index ?? 0;
+    consider(Number(m[1]), matchWithTail(idx, m[0].length), windowAround(idx, m[0].length));
   }
   for (const m of raw.matchAll(/(?:minimum|at\s+least|min\.?)\s*(?:of\s*)?(\d+)\s*\+?\s*years?/gi)) {
-    consider(Number(m[1]), m[0]);
+    const idx = m.index ?? 0;
+    consider(Number(m[1]), matchWithTail(idx, m[0].length), windowAround(idx, m[0].length));
   }
   for (const m of raw.matchAll(/(?<![\d])(\d+)\s*\+\s*years?\b/gi)) {
-    const start = Math.max(0, (m.index ?? 0) - 40);
-    const end = (m.index ?? 0) + m[0].length + 60;
-    consider(Number(m[1]), raw.slice(start, end));
+    const idx = m.index ?? 0;
+    consider(Number(m[1]), matchWithTail(idx, m[0].length), windowAround(idx, m[0].length));
   }
 
   if (!candidates.length) return undefined;

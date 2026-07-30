@@ -144,52 +144,80 @@ export async function applyResumeAtsEditsAction(formData: FormData): Promise<{ o
 
 export async function recordApplicationAction(formData: FormData) {
   const jobId = String(formData.get("jobId"));
-  const job = await prisma.job.findUniqueOrThrow({ where: { id: jobId } });
-  const latestResume = await prisma.resumeVersion.findFirst({
-    where: { jobId },
-    orderBy: { createdAt: "desc" },
-  });
-
-  await prisma.application.create({
-    data: {
-      userId: job.userId,
-      jobId,
-      resumeVersionId: latestResume?.id,
-      status: "applied",
-      submittedAt: new Date(),
-      submissionChannel: String(formData.get("submissionChannel") || "manual"),
-      salaryAsked: String(formData.get("salaryAsked") || "") || null,
-      referral: String(formData.get("referral") || "") || null,
-      interviewStage: String(formData.get("interviewStage") || "none"),
-      locationApplied: String(formData.get("locationApplied") || job.location || "") || null,
-      followUpAt: formData.get("followUpAt")
-        ? new Date(String(formData.get("followUpAt")))
-        : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      notes: String(formData.get("notes") || "") || null,
-    },
-  });
-  await prisma.job.update({ where: { id: jobId }, data: { status: "applied" } });
+  const { createApplicationFromJob } = await import("@/lib/applications/service");
+  await createApplicationFromJob(jobId);
   revalidatePath("/applications");
   revalidatePath(`/jobs/${jobId}`);
+  revalidatePath("/dashboard");
   redirect("/applications");
 }
 
+export async function patchApplicationAction(
+  id: string,
+  patch: import("@/lib/applications/service").ApplicationPatch,
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const { patchApplication } = await import("@/lib/applications/service");
+    await patchApplication(id, patch);
+    revalidatePath("/applications");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Save failed" };
+  }
+}
+
+export async function createBlankApplicationAction(): Promise<{
+  ok: boolean;
+  error?: string;
+  row?: import("@/lib/applications/constants").TrackerRow;
+}> {
+  try {
+    const { createBlankApplication, toTrackerRow } = await import("@/lib/applications/service");
+    const app = await createBlankApplication();
+    const full = await prisma.application.findUniqueOrThrow({
+      where: { id: app.id },
+      include: { job: true, resumeVersion: true },
+    });
+    revalidatePath("/applications");
+    return { ok: true, row: toTrackerRow(full) };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Create failed" };
+  }
+}
+
+export async function reorderApplicationsAction(
+  orderedIds: string[],
+): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const { reorderApplications } = await import("@/lib/applications/service");
+    await reorderApplications(orderedIds);
+    revalidatePath("/applications");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Reorder failed" };
+  }
+}
+
+export async function deleteApplicationAction(id: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const { deleteApplication } = await import("@/lib/applications/service");
+    await deleteApplication(id);
+    revalidatePath("/applications");
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Delete failed" };
+  }
+}
+
+/** @deprecated Prefer patchApplicationAction — kept for any leftover forms */
 export async function updateApplicationAction(formData: FormData) {
   const id = String(formData.get("id"));
-  await prisma.application.update({
-    where: { id },
-    data: {
-      status: String(formData.get("status") || "applied"),
-      interviewStage: String(formData.get("interviewStage") || "none"),
-      salaryAsked: String(formData.get("salaryAsked") || "") || null,
-      referral: String(formData.get("referral") || "") || null,
-      notes: String(formData.get("notes") || "") || null,
-      followUpAt: formData.get("followUpAt")
-        ? new Date(String(formData.get("followUpAt")))
-        : undefined,
-      recruiterName: String(formData.get("recruiterName") || "") || null,
-      recruiterEmail: String(formData.get("recruiterEmail") || "") || null,
-    },
+  const { patchApplication } = await import("@/lib/applications/service");
+  await patchApplication(id, {
+    salaryAsked: String(formData.get("salaryAsked") || "") || null,
+    notes: String(formData.get("notes") || "") || null,
+    recruiterName: String(formData.get("recruiterName") || "") || null,
+    statusTags: [String(formData.get("status") || "Applied")],
   });
   revalidatePath("/applications");
 }

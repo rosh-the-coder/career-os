@@ -159,9 +159,15 @@ const EXPERIENCE_COMMON = [
 
 function contactBlock(contact: ResumeGenerationInput["contact"] & { phone?: string }) {
   const phone = contact.phone ?? "+353 838501604";
+  const linkUrls = {
+    linkedinUrl: contact.linkedinUrl,
+    portfolioUrl: contact.portfolioUrl,
+    githubUrl: contact.githubUrl,
+  };
   return {
     contactLine: `County Dublin, Ireland, ${phone}, ${contact.email}`,
     linksLine: `LINKS LinkedIn (${contact.linkedinUrl}), Portfolio Website (${contact.portfolioUrl}), Github (${contact.githubUrl})`,
+    linkUrls,
   };
 }
 
@@ -241,7 +247,7 @@ export function buildReferenceAtsContent(
   opts?: { jobTitle?: string; company?: string },
 ): AtsResumeContent {
   const { roleName, profile, skills } = profileCopy(profileKey, opts?.jobTitle, opts?.company);
-  const { contactLine, linksLine } = contactBlock(contact);
+  const { contactLine, linksLine, linkUrls } = contactBlock(contact);
   const eng = profileKey === "design_engineer" || profileKey === "ux_engineer";
   const rvv = eng ? RVV_DESIGN_ENG : RVV_PRODUCT;
 
@@ -256,6 +262,7 @@ export function buildReferenceAtsContent(
     documentTitle: `ROSHAN NAJAR, ${roleName}`,
     contactLine,
     linksLine,
+    linkUrls,
     profile,
     skills,
     projects: [rvv],

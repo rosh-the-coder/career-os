@@ -3,7 +3,12 @@ import { readFile } from "fs/promises";
 import path from "path";
 import os from "os";
 import { prisma } from "@/lib/db/prisma";
-import { generateDocxAndPdf, toAtsContent, type AtsResumeContent } from "@/lib/resume/export-docx";
+import {
+  buildAtsPdfBuffer,
+  generateDocxAndPdf,
+  toAtsContent,
+  type AtsResumeContent,
+} from "@/lib/resume/export-docx";
 import type { ResumeDraft } from "@/lib/ai/types";
 
 export const runtime = "nodejs";
@@ -79,25 +84,44 @@ export async function GET(
     );
   }
 
-  const outDir = path.join(os.tmpdir(), "career-os-exports");
   const fileBase = version.fileName ?? `Roshan_Najar_${version.id}`;
-  const files = await generateDocxAndPdf(ats, draft.markdown || version.markdown, outDir, fileBase);
 
+  // PDF: build in memory so we don't depend on a prior on-disk write
   if (format === "pdf") {
-    if (!files.pdfPath) {
+    try {
+      const buf = await buildAtsPdfBuffer(ats);
+      // Best-effort persist for next download
+      try {
+        const outDir = path.join(os.tmpdir(), "career-os-exports");
+        const { writeFile, mkdir } = await import("fs/promises");
+        await mkdir(outDir, { recursive: true });
+        const pdfPath = path.join(outDir, `${fileBase}.pdf`);
+        await writeFile(pdfPath, buf);
+        await prisma.resumeVersion.update({
+          where: { id: version.id },
+          data: { pdfPath },
+        });
+      } catch {
+        /* ignore cache write */
+      }
+      return new NextResponse(new Uint8Array(buf), {
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": `attachment; filename="${fileBase}.pdf"`,
+        },
+      });
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      console.error("[download] PDF failed:", detail);
       return NextResponse.json(
-        { error: "PDF unavailable — download DOCX instead" },
-        { status: 404 },
+        { error: `PDF unavailable (${detail}). Download DOCX instead.` },
+        { status: 500 },
       );
     }
-    const buf = await readFile(files.pdfPath);
-    return new NextResponse(buf, {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${fileBase}.pdf"`,
-      },
-    });
   }
+
+  const outDir = path.join(os.tmpdir(), "career-os-exports");
+  const files = await generateDocxAndPdf(ats, draft.markdown || version.markdown, outDir, fileBase);
 
   const buf = await readFile(files.docxPath);
   return new NextResponse(buf, {

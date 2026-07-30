@@ -113,6 +113,29 @@ describe("hard filters", () => {
     expect(result.reason).toMatch(/Senior/i);
   });
 
+  it("ignores negated YOE marketing like Salesforce Emerging Talent", () => {
+    const jd = `
+      AI Builder, Emerging Talent - UK & Ireland Market
+      As part of our first-of-its-kind AI Builder New Grad cohort, you'll be embedded with customer-facing teams.
+      You're ready to grow faster here than anywhere else - nobody has 10 years of experience in this new frontier, which means your ideas carry real weight from day one.
+      Fluency required in English. Fluent in React, TypeScript, GraphQL, Python.
+    `;
+    expect(inferYearsRequired(jd)).toBeUndefined();
+
+    const result = runHardFilters(
+      {
+        title: "AI Builder, Emerging Talent - UK & Ireland Market",
+        company: "Salesforce",
+        location: "UK & Ireland",
+        remoteType: "remote",
+        descriptionRaw: jd,
+        descriptionClean: jd,
+      },
+      baseSettings,
+    );
+    expect(result.rejected).toBe(false);
+  });
+
   it("does not treat company age as candidate YOE", () => {
     const years = inferYearsRequired(
       "Version 1 has celebrated 30 years in business. 10+ years as a Great Place to Work. We need 4-6 years of experience building AI solutions.",

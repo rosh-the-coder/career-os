@@ -273,13 +273,13 @@ model Application {
   id                String   @id @default(cuid())
   userId            String
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  jobId             String
-  job               Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobId             String?
+  job               Job?     @relation(fields: [jobId], references: [id], onDelete: SetNull)
   resumeVersionId   String?
   resumeVersion     ResumeVersion? @relation(fields: [resumeVersionId], references: [id])
   submittedAt       DateTime?
   submissionChannel String?
-  status            String   @default("review_required")
+  status            String   @default("applied")
   followUpAt        DateTime?
   recruiterName     String?
   recruiterEmail    String?
@@ -289,6 +289,15 @@ model Application {
   referral          String?
   interviewStage    String?  @default("none")
   locationApplied   String?
+  // Notion-style tracker fields
+  companyName       String?
+  positionTitle     String?
+  statusTagsJson    String   @default("[\"Applied\"]")
+  nextActionsJson   String   @default("[]")
+  website           String?
+  referenceLink     String?
+  workSetting       String?
+  sortOrder         Int      @default(0)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
