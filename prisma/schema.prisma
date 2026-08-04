@@ -78,44 +78,81 @@ model CareerProfile {
 }
 
 model Experience {
-  id               String   @id @default(cuid())
-  userId           String
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  company          String
-  umbrellaTitle    String
-  location         String?
-  startDate        String
-  endDate          String?
-  isCurrent        Boolean  @default(false)
-  alternativeTitlesJson String @default("{}")
-  themesJson       String
-  bulletsJson      String   @default("[]")
-  verified         Boolean  @default(true)
-  sortOrder        Int      @default(0)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id                    String   @id @default(cuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company               String
+  umbrellaTitle         String
+  location              String?
+  startDate             String
+  endDate               String?
+  isCurrent             Boolean  @default(false)
+  alternativeTitlesJson String   @default("{}")
+  themesJson            String
+  bulletsJson           String   @default("[]")
+  verified              Boolean  @default(true)
+  sortOrder             Int      @default(0)
+  officialTitle         String?
+  /** JSON string array of employer-supplied official titles when more than one existed. */
+  titleOptionsJson      String   @default("[]")
+  /** User-chosen official title when titleOptionsJson has multiple entries. */
+  selectedOfficialTitle String?
+  /** Optional parenthetical descriptor, e.g. "Content & Growth" — never a title replacement. */
+  approvedTitleDescriptor String?
+  /** Must be true before approvedTitleDescriptor is appended to the displayed title. */
+  titleDescriptorApproved Boolean @default(false)
+  resumeBulletsJson     String   @default("[]")
+  companyContext        String?
+  approvedForCV         Boolean  @default(true)
+  /** Chronological order for timelines (lower = earlier career). */
+  chronologyIndex       Int      @default(0)
+  /** Baseline relevance when role-specific order is absent. */
+  relevanceScore        Float    @default(0)
+  /** Role-keyed display order for resumes, e.g. { "ai_engineer": 1 }. Lower = higher. */
+  preferredOrderByRoleJson String @default("{}")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   evidenceItems EvidenceItem[]
 }
 
 model Project {
-  id              String   @id @default(cuid())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  key             String
-  name            String
-  type            String
-  status          String
-  primaryRole     String
-  stackJson       String
-  featuresJson    String
-  outcomesJson    String
+  id                   String   @id @default(cuid())
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key                  String
+  name                 String
+  type                 String
+  status               String
+  primaryRole          String
+  stackJson            String
+  featuresJson         String
+  outcomesJson         String
   useAsEvidenceForJson String
-  constraintsJson String   @default("[]")
-  verified        Boolean  @default(true)
-  sortOrder       Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  constraintsJson      String   @default("[]")
+  verified             Boolean  @default(true)
+  sortOrder            Int      @default(0)
+  // Resume Engine V3 fields
+  startDate            String?
+  endDate              String?
+  isCurrent            Boolean  @default(false)
+  shortSummary         String?
+  problemStatement     String?
+  solutionSummary      String?
+  technicalSummary     String?
+  resumeBulletsJson    String   @default("[]")
+  roleVariantsJson     String   @default("{}")
+  keywordsJson         String   @default("[]")
+  evidenceIdsJson      String   @default("[]")
+  projectUrl           String?
+  githubUrl            String?
+  caseStudyUrl         String?
+  demoUrl              String?
+  featured             Boolean  @default(false)
+  cvPriority           Int      @default(0)
+  approvedForCV        Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   evidenceItems EvidenceItem[]
 
@@ -123,13 +160,16 @@ model Project {
 }
 
 model Skill {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name      String
-  category  String
-  verified  Boolean  @default(true)
-  keywordsJson String @default("[]")
+  id               String  @id @default(cuid())
+  userId           String
+  user             User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name             String
+  category         String
+  verified         Boolean @default(true)
+  keywordsJson     String  @default("[]")
+  approvedForCV    Boolean @default(true)
+  profilesJson     String  @default("[\"*\"]")
+  evidenceIdsJson  String  @default("[]")
 
   @@unique([userId, name])
 }
@@ -263,7 +303,18 @@ model ResumeVersion {
   docxPath         String?
   pdfPath          String?
   fileName         String?
-  optimizeJson     String?  // CV↔JD keyword coverage + edit suggestions cache
+  optimizeJson     String? // CV↔JD keyword coverage + edit suggestions cache
+  // Resume Engine V3 lineage / metadata
+  parentVersionId  String?
+  parentVersion    ResumeVersion?  @relation("ResumeLineage", fields: [parentVersionId], references: [id])
+  childVersions    ResumeVersion[] @relation("ResumeLineage")
+  composerVersion  String?
+  schemaVersion    String?
+  pageCount        Int?
+  // Resume Studio V4 composition / critique
+  themeId          String?
+  compositionJson  String?
+  critiqueJson     String?
   createdAt        DateTime @default(now())
 
   applications Application[]

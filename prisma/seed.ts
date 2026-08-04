@@ -219,6 +219,16 @@ async function main() {
         "Designed and shipped automation infrastructure supporting B2B lead generation and outreach",
       ]),
       sortOrder: 1,
+      chronologyIndex: 1,
+      relevanceScore: 1,
+      preferredOrderByRoleJson: JSON.stringify({
+        ai_engineer: 1,
+        applied_ai: 1,
+        ai_product_engineer: 1,
+        product_designer: 2,
+        ux_designer: 2,
+        frontend_engineer: 2,
+      }),
     },
   });
 
@@ -226,24 +236,59 @@ async function main() {
     data: {
       userId: user.id,
       company: "Two Blokes Trading",
-      umbrellaTitle: "Content Systems & Growth Collaborator",
+      umbrellaTitle: "Video Editor",
+      officialTitle: "Video Editor",
+      selectedOfficialTitle: "Video Editor",
+      titleOptionsJson: JSON.stringify(["Video Editor"]),
+      approvedTitleDescriptor: "Content & Growth",
+      titleDescriptorApproved: true,
       location: "Remote / Ireland",
-      startDate: "2024",
-      endDate: "2025",
+      startDate: "Jan 2025",
+      endDate: "Jan 2026",
       themesJson: JSON.stringify([
-        "Content systems",
-        "Product-growth collaboration",
-        "Cross-platform design",
-        "SEO-driven creative production",
-        "Stakeholder collaboration",
-        "Measurable growth",
+        "Content production",
+        "Cross-platform publishing",
+        "Growth experimentation",
+        "Production workflows",
+        "Analytics",
       ]),
       bulletsJson: JSON.stringify([
-        "Produced 30+ long-form podcast episodes and 250+ short-form videos over ~10 months (approx. two days/week)",
-        "Grew YouTube subscribers from 2.9K to 8.2K (+183%) and views from 34.9K to 165.5K (+374%)",
-        "Delivered 300+ digital assets across platforms with SEO-informed creative production",
+        "Produced 30+ podcast episodes and 250+ short-form videos across YouTube, Instagram, TikTok, LinkedIn and X.",
+        "Increased YouTube subscribers from 2.9K to 8.2K (+183%).",
+        "Increased total views from 34.9K to 165.5K (+374%).",
+        "Designed reusable production workflows that reduced turnaround time across multiple publishing channels.",
       ]),
+      resumeBulletsJson: JSON.stringify([
+        {
+          text: "Produced 30+ podcast episodes and 250+ short-form videos across YouTube, Instagram, TikTok, LinkedIn and X.",
+          profiles: ["*"],
+        },
+        {
+          text: "Increased YouTube subscribers from 2.9K to 8.2K (+183%).",
+          profiles: ["*"],
+        },
+        {
+          text: "Increased total views from 34.9K to 165.5K (+374%).",
+          profiles: ["*"],
+        },
+        {
+          text: "Designed reusable production workflows that reduced turnaround time across multiple publishing channels.",
+          profiles: ["*"],
+        },
+      ]),
+      companyContext:
+        "Finance-focused digital content brand with a growing product offering (Trevesto), targeting retail investors.",
       sortOrder: 2,
+      chronologyIndex: 2,
+      relevanceScore: 0.75,
+      preferredOrderByRoleJson: JSON.stringify({
+        ai_engineer: 2,
+        applied_ai: 2,
+        ai_product_engineer: 2,
+        product_designer: 3,
+        ux_designer: 3,
+        frontend_engineer: 3,
+      }),
     },
   });
 
@@ -270,6 +315,16 @@ async function main() {
         "Applied accessibility and UX consulting across product engagements",
       ]),
       sortOrder: 3,
+      chronologyIndex: 3,
+      relevanceScore: 0.7,
+      preferredOrderByRoleJson: JSON.stringify({
+        ai_engineer: 3,
+        applied_ai: 3,
+        ai_product_engineer: 3,
+        product_designer: 1,
+        ux_designer: 1,
+        frontend_engineer: 1,
+      }),
     },
   });
 
@@ -278,9 +333,10 @@ async function main() {
       userId: user.id,
       company: "Arcop Associates",
       umbrellaTitle: "Architectural Intern",
-      location: "India",
-      startDate: "2019",
-      endDate: "2019",
+      officialTitle: "Architectural Intern",
+      location: "Bengaluru, India",
+      startDate: "Jan 2022",
+      endDate: "Mar 2023",
       themesJson: JSON.stringify([
         "Technical drawings",
         "Multidisciplinary collaboration",
@@ -295,6 +351,16 @@ async function main() {
         "Translated technical constraints into clear presentation and documentation outputs",
       ]),
       sortOrder: 4,
+      chronologyIndex: 4,
+      relevanceScore: 0.35,
+      preferredOrderByRoleJson: JSON.stringify({
+        ai_engineer: 4,
+        applied_ai: 4,
+        ai_product_engineer: 4,
+        product_designer: 4,
+        ux_designer: 4,
+        frontend_engineer: 4,
+      }),
     },
   });
 

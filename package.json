@@ -11,13 +11,16 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
-    "db:reset": "prisma db push --force-reset && tsx prisma/seed.ts",
+    "db:seed:v3": "tsx prisma/seed-v3-inventory.ts",
+    "db:migrate:v3": "tsx prisma/seed-v3-inventory.ts",
+    "db:reset": "prisma db push --force-reset && tsx prisma/seed.ts && tsx prisma/seed-v3-inventory.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "cli:import": "tsx scripts/import-job.ts",
     "cli:score": "tsx scripts/score-job.ts",
     "cli:discover": "tsx scripts/discover-greenhouse.ts",
-    "cli:delete-sample": "tsx scripts/delete-sample-jobs.ts"
+    "cli:delete-sample": "tsx scripts/delete-sample-jobs.ts",
+    "cli:generate-resume": "tsx scripts/generate-resume.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

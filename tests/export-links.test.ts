@@ -7,19 +7,17 @@ import {
 } from "@/lib/resume/export-docx";
 
 describe("resume link helpers", () => {
-  it("builds DOCX links line with full URLs", () => {
+  it("builds display links line without LINKS prefix", () => {
     expect(
       buildLinksLine({
         linkedinUrl: "https://linkedin.com/in/x",
         portfolioUrl: "https://theonlyrosh.com/",
         githubUrl: "https://github.com/rosh-the-coder",
       }),
-    ).toBe(
-      "LINKS LinkedIn (https://linkedin.com/in/x), Portfolio Website (https://theonlyrosh.com/), Github (https://github.com/rosh-the-coder)",
-    );
+    ).toBe("LinkedIn | Portfolio | GitHub");
   });
 
-  it("parses URLs from an existing linksLine", () => {
+  it("parses URLs from a legacy linksLine", () => {
     const urls = parseLinkUrlsFromLine(
       "LINKS LinkedIn (https://www.linkedin.com/in/roshan-najar-0556711b4/), Portfolio Website (https://theonlyrosh.com/), Github (https://github.com/rosh-the-coder)",
     );

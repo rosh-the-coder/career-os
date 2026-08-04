@@ -125,26 +125,23 @@ const EXPERIENCE_COMMON = [
     ],
   },
   {
-    dates: "Jan 2025 — 2025",
-    title: "PRODUCT DESIGN CONSULTANT (Content & Growth)",
+    dates: "Jan 2025 – Jan 2026",
+    title: "VIDEO EDITOR (CONTENT & GROWTH)",
     company: "Two Blokes Trading",
-    location: "Dublin",
+    location: "Remote / Ireland",
     companyBlurb:
       "Two Blokes Trading is a finance-focused content brand with a growing digital product offering (Trevesto), targeting retail investors.",
     bullets: [
-      "Contributed to product growth and user engagement through end-to-end content design for Two Blokes Trading’s app and brand ecosystem (including Trevesto).",
-      "Produced 30+ long-form podcast episodes and 250+ short-form videos across YouTube, Instagram, TikTok, LinkedIn, X, and web platforms.",
-      "Designed and delivered 300+ digital assets aligned with brand positioning, SEO strategy, and platform-specific user behaviours.",
-      "Increased YouTube subscribers from 2.9K to 8.2K (+183%) and total views from 34.9K to 165.5K (+374%) within 10 months while working two days per week.",
-      "Collaborated with marketing to create SEO-driven, user-focused multimedia content, improving engagement through clear CTAs and accessible cross-platform design.",
-      "Worked closely with founders, marketers, and developers, incorporating feedback rapidly and contributing design input during app development.",
+      "Produced 30+ podcast episodes and 250+ short-form videos across YouTube, Instagram, TikTok, LinkedIn and X.",
+      "Increased YouTube subscribers from 2.9K to 8.2K (+183%) and total views from 34.9K to 165.5K (+374%).",
+      "Designed reusable production workflows that reduced turnaround time across multiple publishing channels.",
     ],
   },
   {
-    dates: "Jul 2022 — Mar 2023",
+    dates: "Jan 2022 – Mar 2023",
     title: "ARCHITECTURAL INTERN",
     company: "Arcop Associates",
-    location: "Bengaluru",
+    location: "Bengaluru, India",
     companyBlurb:
       "Arcop Associates Pvt Ltd is a multidisciplinary architecture and design firm known for large-scale commercial, institutional, and urban development projects across India.",
     bullets: [

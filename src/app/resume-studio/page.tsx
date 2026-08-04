@@ -1,13 +1,18 @@
 import Link from "next/link";
 import { EstimateTooltip, PageHeader, Panel, StatusPill } from "@/components/ui";
+import { StudioVersionPanel } from "@/components/resume-studio/studio-version-panel";
 import { prisma } from "@/lib/db/prisma";
 import { parseJsonArray, parseJsonObject } from "@/lib/utils";
+import { isResumeContentV3 } from "@/lib/resume/v3/adapter";
+import type { ResumeContentV3 } from "@/lib/resume/v3/types";
+import type { CompositionDocument } from "@/lib/resume-studio/composition/types";
+import type { ResumeCritique } from "@/lib/resume-studio/critic/run-resume-critic";
 
 export const dynamic = "force-dynamic";
 
 export default async function ResumeStudioPage() {
   const versions = await prisma.resumeVersion.findMany({
-    include: { job: true, profile: true },
+    include: { job: true, profile: true, parentVersion: true },
     orderBy: { createdAt: "desc" },
   });
 
@@ -15,7 +20,7 @@ export default async function ResumeStudioPage() {
     <div>
       <PageHeader
         title="Resume Studio"
-        description="Generated ATS drafts with claim validation. Download DOCX/PDF below — works on Vercel too."
+        description="Composition preview, theme switching, critic scores, evidence maps and version lineage."
       />
 
       <div className="space-y-4">
@@ -24,7 +29,53 @@ export default async function ResumeStudioPage() {
             status?: string;
             estimateWarnings?: string[];
             blockedClaims?: string[];
+            unsupportedClaims?: string[];
+            warnings?: string[];
+            visualHeuristics?: string[];
           }>(v.validationJson);
+
+          let contentParsed: unknown = null;
+          try {
+            contentParsed = JSON.parse(v.contentJson);
+          } catch {
+            contentParsed = null;
+          }
+          const bag = contentParsed && typeof contentParsed === "object" ? (contentParsed as Record<string, unknown>) : {};
+          const v3raw = "v3" in bag ? bag.v3 : contentParsed;
+          const isV3 = isResumeContentV3(v3raw);
+          const contentV3 = isV3 ? (v3raw as ResumeContentV3) : null;
+          const selectedProjects = contentV3 ? contentV3.selectedProjects.map((p) => p.name) : [];
+
+          let savedComposition: CompositionDocument | null = null;
+          if (v.compositionJson) {
+            try {
+              savedComposition = JSON.parse(v.compositionJson) as CompositionDocument;
+            } catch {
+              savedComposition = null;
+            }
+          } else if (bag.composition) {
+            savedComposition = bag.composition as CompositionDocument;
+          }
+
+          let critique: ResumeCritique | null = null;
+          if (v.critiqueJson) {
+            try {
+              critique = JSON.parse(v.critiqueJson) as ResumeCritique;
+            } catch {
+              critique = null;
+            }
+          }
+
+          const intelligence =
+            (bag.intelligence as import("@/lib/resume-intelligence").ResumeIntelligenceBundle | null) ??
+            (contentV3?.intelligenceBundle as import("@/lib/resume-intelligence").ResumeIntelligenceBundle | null) ??
+            null;
+
+          const warningCount =
+            (validation.estimateWarnings?.length ?? 0) +
+            (validation.unsupportedClaims?.length ?? 0) +
+            (validation.warnings?.length ?? 0) +
+            (validation.visualHeuristics?.length ?? 0);
 
           return (
             <Panel key={v.id}>
@@ -35,27 +86,44 @@ export default async function ResumeStudioPage() {
                   </h2>
                   <p className="mt-1 text-sm text-ink-muted">
                     {v.profile.name} · {v.pageLength}-page · {v.fileName}
+                    {v.themeId ? ` · theme ${v.themeId}` : ""}
+                  </p>
+                  <p className="mt-1 font-mono text-[11px] text-ink-faint">
+                    {v.composerVersion ?? "legacy"} · schema {v.schemaVersion ?? "2.x"} ·{" "}
+                    {new Date(v.createdAt).toISOString()}
+                    {v.parentVersionId ? ` · child of ${v.parentVersion?.fileName ?? v.parentVersionId}` : ""}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <StatusPill status={v.validationStatus} />
-                  <a
-                    href={`/api/resumes/${v.id}/download?format=docx`}
-                    className="rounded-md border border-line px-3 py-1.5 text-sm hover:border-accent/40"
-                  >
-                    Download DOCX
-                  </a>
-                  <a
-                    href={`/api/resumes/${v.id}/download?format=pdf`}
-                    className="rounded-md border border-line px-3 py-1.5 text-sm hover:border-accent/40"
-                  >
-                    Download PDF
-                  </a>
                   {v.job ? (
                     <Link href={`/jobs/${v.job.id}`} className="text-sm text-accent hover:underline">
                       Job
                     </Link>
                   ) : null}
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-md border border-line bg-canvas/60 p-3">
+                  <div className="font-mono text-[10px] uppercase tracking-wider text-ink-faint">Selected projects</div>
+                  <div className="mt-1 text-sm text-ink">
+                    {selectedProjects.length ? selectedProjects.join(", ") : "—"}
+                  </div>
+                </div>
+                <div className="rounded-md border border-line bg-canvas/60 p-3">
+                  <div className="font-mono text-[10px] uppercase tracking-wider text-ink-faint">Evidence items</div>
+                  <div className="mt-1 font-display text-2xl text-ink">
+                    {parseJsonArray(v.evidenceUsedJson).length}
+                  </div>
+                </div>
+                <div className="rounded-md border border-line bg-canvas/60 p-3">
+                  <div className="font-mono text-[10px] uppercase tracking-wider text-ink-faint">Warnings</div>
+                  <div className="mt-1 font-display text-2xl text-ink">{warningCount}</div>
+                </div>
+                <div className="rounded-md border border-line bg-canvas/60 p-3">
+                  <div className="font-mono text-[10px] uppercase tracking-wider text-ink-faint">Page target</div>
+                  <div className="mt-1 font-display text-2xl text-ink">{v.pageCount ?? v.pageLength}</div>
                 </div>
               </div>
 
@@ -69,12 +137,17 @@ export default async function ResumeStudioPage() {
                 </div>
               ) : null}
 
-              <pre className="mt-4 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg border border-line bg-canvas p-4 font-mono text-xs text-ink-muted">
-                {v.markdown}
-              </pre>
-
-              <div className="mt-3 font-mono text-[11px] text-ink-faint">
-                Evidence items: {parseJsonArray(v.evidenceUsedJson).length}
+              <div className="mt-4">
+                <StudioVersionPanel
+                  versionId={v.id}
+                  contentV3={contentV3}
+                  savedComposition={savedComposition}
+                  critique={critique}
+                  intelligence={intelligence}
+                  themeId={v.themeId}
+                  markdown={v.markdown}
+                  downloadBase={v.fileName ?? v.id}
+                />
               </div>
             </Panel>
           );

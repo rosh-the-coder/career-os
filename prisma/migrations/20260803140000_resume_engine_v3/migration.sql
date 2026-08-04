@@ -1,0 +1,46 @@
+-- Resume Engine V3: Project CV fields, Skill enrichment, Experience titles, Resume lineage
+
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "startDate" TEXT;
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "endDate" TEXT;
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "isCurrent" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "shortSummary" TEXT;
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "problemStatement" TEXT;
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "solutionSummary" TEXT;
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "technicalSummary" TEXT;
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "resumeBulletsJson" TEXT NOT NULL DEFAULT '[]';
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "roleVariantsJson" TEXT NOT NULL DEFAULT '{}';
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "keywordsJson" TEXT NOT NULL DEFAULT '[]';
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "evidenceIdsJson" TEXT NOT NULL DEFAULT '[]';
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "projectUrl" TEXT;
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "githubUrl" TEXT;
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "caseStudyUrl" TEXT;
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "demoUrl" TEXT;
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "featured" BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "cvPriority" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "Project" ADD COLUMN IF NOT EXISTS "approvedForCV" BOOLEAN NOT NULL DEFAULT false;
+
+ALTER TABLE "Skill" ADD COLUMN IF NOT EXISTS "approvedForCV" BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE "Skill" ADD COLUMN IF NOT EXISTS "profilesJson" TEXT NOT NULL DEFAULT '["*"]';
+ALTER TABLE "Skill" ADD COLUMN IF NOT EXISTS "evidenceIdsJson" TEXT NOT NULL DEFAULT '[]';
+
+ALTER TABLE "Experience" ADD COLUMN IF NOT EXISTS "officialTitle" TEXT;
+ALTER TABLE "Experience" ADD COLUMN IF NOT EXISTS "resumeBulletsJson" TEXT NOT NULL DEFAULT '[]';
+ALTER TABLE "Experience" ADD COLUMN IF NOT EXISTS "companyContext" TEXT;
+ALTER TABLE "Experience" ADD COLUMN IF NOT EXISTS "approvedForCV" BOOLEAN NOT NULL DEFAULT true;
+
+ALTER TABLE "ResumeVersion" ADD COLUMN IF NOT EXISTS "parentVersionId" TEXT;
+ALTER TABLE "ResumeVersion" ADD COLUMN IF NOT EXISTS "composerVersion" TEXT;
+ALTER TABLE "ResumeVersion" ADD COLUMN IF NOT EXISTS "schemaVersion" TEXT;
+ALTER TABLE "ResumeVersion" ADD COLUMN IF NOT EXISTS "pageCount" INTEGER;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'ResumeVersion_parentVersionId_fkey'
+  ) THEN
+    ALTER TABLE "ResumeVersion"
+      ADD CONSTRAINT "ResumeVersion_parentVersionId_fkey"
+      FOREIGN KEY ("parentVersionId") REFERENCES "ResumeVersion"("id")
+      ON DELETE SET NULL ON UPDATE CASCADE;
+  END IF;
+END $$;

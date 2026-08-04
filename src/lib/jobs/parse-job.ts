@@ -125,8 +125,14 @@ export function parseJobText(input: {
     /^what (you'|you’ll|you'll|we) (need|look|bring)/i,
     /^about you/i,
     /^must[-\s]?have/i,
+    /^essential/i,
+    /^desirable/i,
     /^qualifications?/i,
     /^skills?/i,
+    /^technical skills?/i,
+    /^experience required/i,
+    /^you will have/i,
+    /^the successful candidate/i,
   ]);
   const respBullets = extractSectionBullets(descriptionClean, [
     /^responsibilities?/i,
@@ -134,12 +140,33 @@ export function parseJobText(input: {
     /^the role/i,
     /^about the (role|job)/i,
     /^key duties/i,
+    /^key responsibilities/i,
+    /^your responsibilities/i,
+    /^day[- ]to[- ]day/i,
   ]);
 
-  const requirements: Requirement[] = reqBullets.map((text) => ({
+  // Fallback: bullet lines under "Description" when structured sections are empty
+  let requirements: Requirement[] = reqBullets.map((text) => ({
     text,
-    kind: /nice to have|preferred|bonus/i.test(text) ? "preferred" : "required",
+    kind: /nice to have|preferred|bonus|desirable/i.test(text) ? "preferred" : "required",
   }));
+
+  if (requirements.length === 0) {
+    const fallback = descriptionClean
+      .split("\n")
+      .map((l) => l.replace(/^[-•*\d.)\s]+/, "").trim())
+      .filter((l) => l.length > 25 && l.length < 220)
+      .filter((l) =>
+        /\b(python|api|llm|nlp|azure|sql|git|experience|knowledge|ability|skill|pipeline|evaluat|prompt|automation)\b/i.test(
+          l,
+        ),
+      )
+      .slice(0, 25);
+    requirements = fallback.map((text) => ({
+      text,
+      kind: /nice to have|preferred|bonus|desirable/i.test(text) ? "preferred" : "required",
+    }));
+  }
 
   const keywords = TECH_KEYWORDS.filter((k) =>
     descriptionClean.toLowerCase().includes(k.toLowerCase()),

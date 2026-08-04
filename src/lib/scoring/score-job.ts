@@ -146,12 +146,18 @@ function pickProfile(ctx: ScoringContext, corpus: string): ScoringProfile {
 
   for (const profile of ctx.profiles) {
     const hits = profile.keywords.filter((k) => corpus.includes(k.toLowerCase())).length;
-    const titleBoost =
+    let titleBoost =
       corpus.includes(profile.name.toLowerCase()) ||
       profile.keywords.some((k) => ctx.job.title.toLowerCase().includes(k.toLowerCase()))
         ? 3
         : 0;
-    // Bias toward default when close
+    // Strong boost for dedicated AI Engineer profile on AI Engineer titles
+    if (profile.key === "ai_engineer" && /\bai engineer\b/i.test(ctx.job.title)) {
+      titleBoost += 8;
+    }
+    if (profile.key === "applied_ai" && /\b(automation|applied ai)\b/i.test(ctx.job.title)) {
+      titleBoost += 4;
+    }
     const bias = profile.key === defaultKey ? 1.5 : 0;
     const s = hits + titleBoost + bias;
     if (s > bestScore) {

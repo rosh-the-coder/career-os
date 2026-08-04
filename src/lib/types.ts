@@ -87,13 +87,27 @@ export const SCORE_WEIGHTS = {
 } as const;
 
 export const PROFILE_KEYS = [
-  "design_engineer",
-  "product_designer",
+  "ai_engineer",
   "applied_ai",
-  "ai_creative",
+  "design_engineer",
+  "product_engineer",
   "ux_engineer",
+  "product_designer",
+  "frontend_engineer",
+  "ux_ui_designer",
+  "ai_creative",
 ] as const;
 
 export type ProfileKey = (typeof PROFILE_KEYS)[number];
 
 export const DEFAULT_PROFILE_KEY: ProfileKey = "ux_engineer";
+
+/** Project ranking weights for Resume Engine V3 (must sum to 1). */
+export const PROJECT_RANK_WEIGHTS = {
+  profileRelevance: 0.25,
+  jdKeywordRelevance: 0.25,
+  evidenceStrength: 0.2,
+  recency: 0.1,
+  operationalStatus: 0.1,
+  careerPositioning: 0.1,
+} as const;

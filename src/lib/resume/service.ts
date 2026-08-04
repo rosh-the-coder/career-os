@@ -16,6 +16,28 @@ import {
 } from "@/lib/resume/ats-optimize";
 import { getPrimaryUser } from "@/lib/jobs/service";
 import { parseJsonArray } from "@/lib/utils";
+import {
+  composeResumeV3,
+  loadCareerInventory,
+  legacyValidationFromV3,
+  resumeEngineVersion,
+  v3ToAtsContent,
+  v3ToMarkdown,
+  validateExportedResumeText,
+  COMPOSER_VERSION,
+  RESUME_SCHEMA_V3,
+  type ResumeContentV3,
+} from "@/lib/resume/v3";
+import {
+  composeDocument,
+  generateCompositionExports,
+  runResumeCritic,
+  runVisualHeuristics,
+  COMPOSER_VERSION_V4,
+  RESUME_SCHEMA_V4,
+  type ThemeId,
+} from "@/lib/resume-studio";
+import { getTheme } from "@/lib/resume-studio/themes";
 
 function exportDir() {
   if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
@@ -24,14 +46,15 @@ function exportDir() {
   return path.join(process.cwd(), "data", "exports");
 }
 
-async function loadEvidenceBundle(userId: string, markdown: string) {
+/** V2 legacy: includes markdown (known weakness). Prefer omitGeneratedMarkdown for new paths. */
+async function loadEvidenceBundle(userId: string, markdown?: string) {
   const evidence = await prisma.evidenceItem.findMany({
     where: { userId },
     include: { metrics: true },
   });
   const evidenceTexts = [
     ...evidence.map((e) => `${e.title}\n${e.description}`),
-    markdown,
+    ...(markdown ? [markdown] : []),
   ];
   const estimateLabels = evidence
     .flatMap((e) => e.metrics)
@@ -54,25 +77,52 @@ export async function persistAtsResumeVersion(opts: {
   promptVersion: string;
   modelVersion: string;
   optimizeJson?: string | null;
+  contentV3?: ResumeContentV3;
+  parentVersionId?: string;
+  composerVersion?: string;
+  schemaVersion?: string;
+  pageCount?: number;
 }) {
-  const markdown = atsToMarkdown(opts.ats);
+  const markdown = opts.contentV3 ? v3ToMarkdown(opts.contentV3) : atsToMarkdown(opts.ats);
   const draft = atsContentToDraft(opts.ats);
 
-  const validation = validateClaims(draft, opts.evidenceTexts, opts.estimateLabels);
+  if (opts.contentV3) {
+    const profileKey = opts.contentV3.target.profileKey;
+    const aiLike = profileKey === "ai_engineer" || profileKey === "applied_ai";
+    const exportCheck = validateExportedResumeText(markdown, {
+      requireAiEngineerTitle: aiLike,
+      requireTechnicalStack: opts.pageLength === 2 && aiLike,
+      requireRedVelvetVault: opts.pageLength === 2 && aiLike,
+      requireAethelgard: aiLike,
+      requireCareerOs: aiLike,
+      expectExperienceBeforeProjects: aiLike,
+      requireFullEmploymentHistory: opts.pageLength === 2 && aiLike,
+    });
+    if (!exportCheck.ok) {
+      throw new Error(`Export validation failed: ${exportCheck.errors.join("; ")}`);
+    }
+  }
+
+  const validation = opts.contentV3
+    ? legacyValidationFromV3(opts.contentV3.validation)
+    : validateClaims(draft, opts.evidenceTexts, opts.estimateLabels);
+
   if (validation.blockedClaims.length) {
     throw new Error(
       `Resume blocked by claim guard: "${validation.blockedClaims[0].slice(0, 120)}…"`,
     );
   }
 
-  const fileBase = buildResumeFileName(opts.profileName.replace(/\s+/g, "_"), opts.company);
+  const fileBase = `${buildResumeFileName(opts.profileName.replace(/\s+/g, "_"), opts.company)}_${Date.now().toString(36)}`;
   const outDir = exportDir();
   let docxPath: string;
   let pdfPath: string | null;
+  let exportPageCount: number | undefined;
   try {
     const files = await generateDocxAndPdf(opts.ats, markdown, outDir, fileBase);
     docxPath = files.docxPath;
     pdfPath = files.pdfPath;
+    exportPageCount = files.pageCount;
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
     throw new Error(`Export failed (${detail}). DOCX write directory: ${outDir}`);
@@ -84,10 +134,14 @@ export async function persistAtsResumeVersion(opts: {
       jobId: opts.jobId,
       profileId: opts.profileId,
       pageLength: opts.pageLength,
-      contentJson: JSON.stringify({ draft, ats: opts.ats }),
+      contentJson: JSON.stringify(
+        opts.contentV3
+          ? { schemaVersion: RESUME_SCHEMA_V3, v3: opts.contentV3, draft, ats: opts.ats }
+          : { draft, ats: opts.ats },
+      ),
       markdown,
       evidenceUsedJson: JSON.stringify(opts.evidenceTitles),
-      validationJson: JSON.stringify(validation),
+      validationJson: JSON.stringify(opts.contentV3?.validation ?? validation),
       validationStatus: validation.status,
       promptVersion: opts.promptVersion,
       modelVersion: opts.modelVersion,
@@ -95,7 +149,33 @@ export async function persistAtsResumeVersion(opts: {
       pdfPath: pdfPath ?? undefined,
       fileName: fileBase,
       optimizeJson: opts.optimizeJson ?? undefined,
+      parentVersionId: opts.parentVersionId,
+      composerVersion: opts.composerVersion,
+      schemaVersion: opts.schemaVersion,
+      pageCount: exportPageCount ?? opts.pageCount ?? opts.pageLength,
     },
+  });
+}
+
+async function resolveProfileForJob(
+  userId: string,
+  job: {
+    title: string;
+    score: { profile: { id: string; key: string; name: string } | null } | null;
+  },
+) {
+  // Prefer dedicated AI Engineer profile for literal AI Engineer JDs when available
+  if (/\bai engineer\b/i.test(job.title)) {
+    const aiEng = await prisma.careerProfile.findUnique({
+      where: { userId_key: { userId, key: "ai_engineer" } },
+    });
+    if (aiEng) return aiEng;
+  }
+
+  if (job.score?.profile) return job.score.profile;
+
+  return prisma.careerProfile.findFirstOrThrow({
+    where: { userId, isDefault: true },
   });
 }
 
@@ -112,11 +192,17 @@ export async function generateResumeForJob(jobId: string, pageLength: 1 | 2 = 1)
     throw new Error("Cannot generate resume for hard-rejected job");
   }
 
-  const profile =
-    job.score?.profile ??
-    (await prisma.careerProfile.findFirstOrThrow({
-      where: { userId: user.id, isDefault: true },
-    }));
+  const engine = resumeEngineVersion();
+
+  if (engine === "v4") {
+    return generateResumeForJobV4(jobId, pageLength, user.id, job);
+  }
+
+  if (engine === "v3") {
+    return generateResumeForJobV3(jobId, pageLength, user.id, job);
+  }
+
+  const profile = await resolveProfileForJob(user.id, job);
 
   const contactEmail = user.settings.contactEmail || user.email;
   const contact = {
@@ -143,6 +229,7 @@ export async function generateResumeForJob(jobId: string, pageLength: 1 | 2 = 1)
   }
 
   const markdown = atsToMarkdown(ats);
+  // V2 path retains historical behaviour; V3 does not self-validate
   const { evidence, evidenceTexts, estimateLabels } = await loadEvidenceBundle(user.id, markdown);
 
   const version = await persistAtsResumeVersion({
@@ -162,6 +249,224 @@ export async function generateResumeForJob(jobId: string, pageLength: 1 | 2 = 1)
     estimateLabels,
     promptVersion: "v2-reference-pdf-aligned",
     modelVersion: "reference-template-v1",
+    composerVersion: "resume-engine-v2",
+    schemaVersion: "2.0",
+  });
+
+  await prisma.job.update({
+    where: { id: job.id },
+    data: { status: "materials_ready" },
+  });
+
+  return version;
+}
+
+async function generateResumeForJobV4(
+  jobId: string,
+  pageLength: 1 | 2,
+  userId: string,
+  job: Awaited<ReturnType<typeof prisma.job.findUniqueOrThrow>> & {
+    score: { profile: { id: string; key: string; name: string } | null; recommendedProjectsJson: string } | null;
+  },
+) {
+  const profile = await resolveProfileForJob(userId, job);
+  const inventory = await loadCareerInventory(userId);
+  const recommended = parseJsonArray<string>(job.score?.recommendedProjectsJson ?? "[]");
+  const themeId = (process.env.RESUME_THEME_ID as ThemeId) || "arthur-cox";
+  getTheme(themeId); // resolve / fallback
+
+  const contentV3 = composeResumeV3({
+    inventory,
+    jobId: job.id,
+    jobTitle: job.title,
+    company: job.company,
+    description: job.descriptionClean || job.descriptionRaw,
+    keywords: parseJsonArray<string>(job.keywordsJson),
+    requirements: parseJsonArray<{ text: string }>(job.requirementsJson),
+    profileKey: profile.key,
+    pageLength,
+    recommendedProjectsFromScore: recommended,
+  });
+
+  if (contentV3.validation.blockedClaims.length) {
+    throw new Error(
+      `Resume blocked by claim guard: "${contentV3.validation.blockedClaims[0].slice(0, 120)}…"`,
+    );
+  }
+
+  let composition = composeDocument(contentV3, themeId);
+  let critique = await runResumeCritic({
+    document: composition,
+    jobTitle: job.title,
+    company: job.company,
+    jdSnippet: job.descriptionClean || job.descriptionRaw,
+  });
+
+  // One safe improve pass: recompose + re-critique (no metric invention)
+  if (critique.overall === "revise" && process.env.RESUME_CRITIC_AUTO_IMPROVE !== "false") {
+    composition = composeDocument(contentV3, themeId);
+    critique = await runResumeCritic({
+      document: composition,
+      jobTitle: job.title,
+      company: job.company,
+      jdSnippet: job.descriptionClean || job.descriptionRaw,
+    });
+  }
+
+  const markdown = composition.readingOrder.join("\n") + "\n";
+  const profileKey = contentV3.target.profileKey;
+  const aiLike = profileKey === "ai_engineer" || profileKey === "applied_ai";
+  const exportCheck = validateExportedResumeText(markdown, {
+    requireAiEngineerTitle: aiLike,
+    requireTechnicalStack: pageLength === 2 && aiLike,
+    requireRedVelvetVault: pageLength === 2 && aiLike,
+    requireAethelgard: aiLike,
+    requireCareerOs: aiLike,
+    expectExperienceBeforeProjects: aiLike,
+    requireFullEmploymentHistory: pageLength === 2 && aiLike,
+  });
+  if (!exportCheck.ok) {
+    throw new Error(`Export validation failed: ${exportCheck.errors.join("; ")}`);
+  }
+
+  const heuristics = runVisualHeuristics(composition);
+  const ats = v3ToAtsContent(contentV3);
+  const draft = atsContentToDraft(ats);
+  const validation = legacyValidationFromV3(contentV3.validation);
+
+  const fileBase = `${buildResumeFileName(contentV3.header.professionalTitle.replace(/\s+/g, "_"), job.company)}_${Date.now().toString(36)}`;
+  const outDir = exportDir();
+  const files = await generateCompositionExports(composition, outDir, fileBase);
+  const visualFlags = runVisualHeuristics(composition, files.pageCount);
+
+  const evidenceTitles = [
+    ...new Set([
+      ...contentV3.selectedProjects.flatMap((p) => p.evidenceIds),
+      ...contentV3.experience.flatMap((e) => e.evidenceIds),
+      ...contentV3.summary.evidenceIds,
+    ]),
+  ]
+    .map((id) => inventory.evidence.find((e) => e.id === id)?.title ?? id)
+    .filter(Boolean);
+
+  const parent = await prisma.resumeVersion.findFirst({
+    where: { jobId: job.id },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
+  });
+
+  const version = await prisma.resumeVersion.create({
+    data: {
+      userId,
+      jobId: job.id,
+      profileId: profile.id,
+      pageLength,
+      contentJson: JSON.stringify({
+        schemaVersion: RESUME_SCHEMA_V4,
+        v3: contentV3,
+        composition,
+        intelligence: contentV3.intelligenceBundle ?? null,
+        draft,
+        ats,
+      }),
+      markdown: files.markdown,
+      evidenceUsedJson: JSON.stringify(evidenceTitles),
+      validationJson: JSON.stringify({
+        ...contentV3.validation,
+        visualHeuristics: [...heuristics, ...visualFlags],
+        critiqueOverall: critique.overall,
+        atsIntelligence: contentV3.generationMetadata.intelligence ?? null,
+      }),
+      validationStatus: validation.status === "failed" ? "failed" : critique.overall === "blocked" ? "warning" : validation.status,
+      promptVersion: contentV3.generationMetadata.promptVersion ?? "v4-composition",
+      modelVersion: critique.meta.used ? `critic:${critique.meta.provider}` : COMPOSER_VERSION_V4,
+      docxPath: files.docxPath,
+      pdfPath: files.pdfPath ?? undefined,
+      fileName: fileBase,
+      parentVersionId: parent?.id,
+      composerVersion: COMPOSER_VERSION_V4,
+      schemaVersion: RESUME_SCHEMA_V4,
+      pageCount: files.pageCount ?? pageLength,
+      themeId: composition.themeId,
+      compositionJson: JSON.stringify(composition),
+      critiqueJson: JSON.stringify(critique),
+    },
+  });
+
+  await prisma.job.update({
+    where: { id: job.id },
+    data: { status: "materials_ready" },
+  });
+
+  return version;
+}
+
+async function generateResumeForJobV3(
+  jobId: string,
+  pageLength: 1 | 2,
+  userId: string,
+  job: Awaited<ReturnType<typeof prisma.job.findUniqueOrThrow>> & {
+    score: { profile: { id: string; key: string; name: string } | null; recommendedProjectsJson: string } | null;
+  },
+) {
+  const profile = await resolveProfileForJob(userId, job);
+  const inventory = await loadCareerInventory(userId);
+  const recommended = parseJsonArray<string>(job.score?.recommendedProjectsJson ?? "[]");
+
+  const contentV3 = composeResumeV3({
+    inventory,
+    jobId: job.id,
+    jobTitle: job.title,
+    company: job.company,
+    description: job.descriptionClean || job.descriptionRaw,
+    keywords: parseJsonArray<string>(job.keywordsJson),
+    requirements: parseJsonArray<{ text: string }>(job.requirementsJson),
+    profileKey: profile.key,
+    pageLength,
+    recommendedProjectsFromScore: recommended,
+  });
+
+  if (contentV3.validation.blockedClaims.length) {
+    throw new Error(
+      `Resume blocked by claim guard: "${contentV3.validation.blockedClaims[0].slice(0, 120)}…"`,
+    );
+  }
+
+  const ats = v3ToAtsContent(contentV3);
+  const evidenceTitles = [
+    ...new Set([
+      ...contentV3.selectedProjects.flatMap((p) => p.evidenceIds),
+      ...contentV3.experience.flatMap((e) => e.evidenceIds),
+      ...contentV3.summary.evidenceIds,
+    ]),
+  ]
+    .map((id) => inventory.evidence.find((e) => e.id === id)?.title ?? id)
+    .filter(Boolean);
+
+  const parent = await prisma.resumeVersion.findFirst({
+    where: { jobId: job.id },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
+  });
+
+  const version = await persistAtsResumeVersion({
+    userId,
+    jobId: job.id,
+    profileId: profile.id,
+    profileName: contentV3.header.professionalTitle,
+    company: job.company,
+    pageLength,
+    ats,
+    evidenceTitles,
+    evidenceTexts: [], // V3 validated externally already
+    estimateLabels: contentV3.validation.estimateWarnings,
+    promptVersion: contentV3.generationMetadata.promptVersion ?? "v3-deterministic",
+    modelVersion: contentV3.generationMetadata.modelVersion ?? COMPOSER_VERSION,
+    contentV3,
+    parentVersionId: parent?.id,
+    composerVersion: COMPOSER_VERSION,
+    schemaVersion: RESUME_SCHEMA_V3,
+    pageCount: pageLength,
   });
 
   await prisma.job.update({
@@ -336,6 +641,9 @@ export async function applyResumeAtsEditsForJob(
     promptVersion: "v2-ats-optimize",
     modelVersion: `ats-optimize:${cache.suggestMeta?.provider ?? "unknown"}`,
     optimizeJson,
+    parentVersionId: source.id,
+    composerVersion: source.composerVersion ?? "resume-engine-v2",
+    schemaVersion: source.schemaVersion ?? "2.0",
   });
 
   await prisma.job.update({

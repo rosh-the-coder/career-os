@@ -23,7 +23,7 @@ export default async function ProfilesPage() {
     <div>
       <PageHeader
         title="Career profiles"
-        description="Five positioning variants over one verified evidence base. Default bias: UX Engineer."
+        description="Role positioning variants over one verified evidence base. Resume Engine V3 composes CVs from this inventory (not hard-coded templates). Default bias: UX Engineer."
       />
 
       <div className="mb-8 grid gap-4 lg:grid-cols-2">
