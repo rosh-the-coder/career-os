@@ -1,0 +1,61 @@
+{
+  "id": "project-ranking",
+  "nodes": [
+    {
+      "id": "pr",
+      "label": "profileRelevance",
+      "weight": 0.25
+    },
+    {
+      "id": "jd",
+      "label": "jdKeywordRelevance",
+      "weight": 0.25
+    },
+    {
+      "id": "ev",
+      "label": "evidenceStrength",
+      "weight": 0.2
+    },
+    {
+      "id": "rec",
+      "label": "recency",
+      "weight": 0.1
+    },
+    {
+      "id": "ops",
+      "label": "operationalStatus",
+      "weight": 0.1
+    },
+    {
+      "id": "pos",
+      "label": "careerPositioning",
+      "weight": 0.1
+    }
+  ],
+  "edges": [],
+  "sections": [
+    "§09-product"
+  ],
+  "source": "src/lib/types.ts PROJECT_RANK_WEIGHTS",
+  "note": "AI profiles force-select Aethelgard+CareerOS on 1-page in product code; demo seed uses Workflow OS / Demo Systems Work",
+  "labels": [
+    "profileRelevance",
+    "jdKeywordRelevance",
+    "evidenceStrength",
+    "recency",
+    "operationalStatus",
+    "careerPositioning"
+  ],
+  "categories": [],
+  "mobileOrder": [
+    "pr",
+    "jd",
+    "ev",
+    "rec",
+    "ops",
+    "pos"
+  ],
+  "sourceReferences": [
+    "src/lib/types.ts PROJECT_RANK_WEIGHTS"
+  ]
+}

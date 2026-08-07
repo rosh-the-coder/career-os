@@ -1,0 +1,111 @@
+{
+  "id": "fragmented-workflow",
+  "nodes": [
+    {
+      "id": "resumeio",
+      "label": "Resume.io",
+      "category": "generate"
+    },
+    {
+      "id": "chatgpt",
+      "label": "ChatGPT",
+      "category": "chat"
+    },
+    {
+      "id": "linkedin",
+      "label": "LinkedIn",
+      "category": "discover"
+    },
+    {
+      "id": "word",
+      "label": "Word",
+      "category": "generate"
+    },
+    {
+      "id": "notion",
+      "label": "Notion",
+      "category": "track"
+    },
+    {
+      "id": "email",
+      "label": "Email",
+      "category": "submit"
+    },
+    {
+      "id": "excel",
+      "label": "Excel",
+      "category": "track"
+    },
+    {
+      "id": "pdf",
+      "label": "PDF",
+      "category": "generate"
+    }
+  ],
+  "edges": [
+    {
+      "from": "resumeio",
+      "to": "chatgpt"
+    },
+    {
+      "from": "chatgpt",
+      "to": "linkedin"
+    },
+    {
+      "from": "linkedin",
+      "to": "word"
+    },
+    {
+      "from": "word",
+      "to": "notion"
+    },
+    {
+      "from": "notion",
+      "to": "email"
+    },
+    {
+      "from": "email",
+      "to": "excel"
+    },
+    {
+      "from": "excel",
+      "to": "pdf"
+    },
+    {
+      "from": "pdf",
+      "to": "resumeio",
+      "label": "Repeat"
+    }
+  ],
+  "sections": [
+    "§05"
+  ],
+  "labels": [
+    "Resume.io",
+    "ChatGPT",
+    "LinkedIn",
+    "Word",
+    "Notion",
+    "Email",
+    "Excel",
+    "PDF"
+  ],
+  "categories": [
+    "generate",
+    "chat",
+    "discover",
+    "track",
+    "submit"
+  ],
+  "mobileOrder": [
+    "resumeio",
+    "chatgpt",
+    "linkedin",
+    "word",
+    "notion",
+    "email",
+    "excel",
+    "pdf"
+  ],
+  "sourceReferences": []
+}

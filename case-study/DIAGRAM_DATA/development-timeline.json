@@ -1,0 +1,75 @@
+{
+  "id": "development-timeline",
+  "nodes": [
+    {
+      "id": "c1",
+      "label": "2026-07-24 a8d2290 MVP"
+    },
+    {
+      "id": "c2",
+      "label": "2026-07-24 e1c0273 Discovery"
+    },
+    {
+      "id": "c3",
+      "label": "2026-07-25 68f82b4 LLM scoring"
+    },
+    {
+      "id": "c4",
+      "label": "2026-07-28 3feecf3 ATS fit"
+    },
+    {
+      "id": "c5",
+      "label": "2026-07-30 58c7763 Tracker + YOE"
+    },
+    {
+      "id": "c6",
+      "label": "2026-08-04 26f2596 V3/V4"
+    }
+  ],
+  "edges": [
+    {
+      "from": "c1",
+      "to": "c2"
+    },
+    {
+      "from": "c2",
+      "to": "c3"
+    },
+    {
+      "from": "c3",
+      "to": "c4"
+    },
+    {
+      "from": "c4",
+      "to": "c5"
+    },
+    {
+      "from": "c5",
+      "to": "c6"
+    }
+  ],
+  "sections": [
+    "§58"
+  ],
+  "source": "docs/project/TIMELINE.md",
+  "labels": [
+    "2026-07-24 a8d2290 MVP",
+    "2026-07-24 e1c0273 Discovery",
+    "2026-07-25 68f82b4 LLM scoring",
+    "2026-07-28 3feecf3 ATS fit",
+    "2026-07-30 58c7763 Tracker + YOE",
+    "2026-08-04 26f2596 V3/V4"
+  ],
+  "categories": [],
+  "mobileOrder": [
+    "c1",
+    "c2",
+    "c3",
+    "c4",
+    "c5",
+    "c6"
+  ],
+  "sourceReferences": [
+    "docs/project/TIMELINE.md"
+  ]
+}

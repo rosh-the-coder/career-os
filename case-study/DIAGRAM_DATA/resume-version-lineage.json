@@ -1,0 +1,46 @@
+{
+  "id": "resume-version-lineage",
+  "nodes": [
+    {
+      "id": "p",
+      "label": "Parent ResumeVersion"
+    },
+    {
+      "id": "c1",
+      "label": "ATS apply child"
+    },
+    {
+      "id": "c2",
+      "label": "Regeneration child"
+    }
+  ],
+  "edges": [
+    {
+      "from": "p",
+      "to": "c1"
+    },
+    {
+      "from": "p",
+      "to": "c2"
+    }
+  ],
+  "sections": [
+    "§13-screen",
+    "act7-lineage"
+  ],
+  "source": "prisma/schema.prisma ResumeVersion.parentVersionId",
+  "labels": [
+    "Parent ResumeVersion",
+    "ATS apply child",
+    "Regeneration child"
+  ],
+  "categories": [],
+  "mobileOrder": [
+    "p",
+    "c1",
+    "c2"
+  ],
+  "sourceReferences": [
+    "prisma/schema.prisma ResumeVersion.parentVersionId"
+  ]
+}

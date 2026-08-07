@@ -1,0 +1,77 @@
+{
+  "id": "system-architecture",
+  "nodes": [
+    {
+      "id": "op",
+      "label": "Operator"
+    },
+    {
+      "id": "app",
+      "label": "Next.js CareerOS"
+    },
+    {
+      "id": "db",
+      "label": "Supabase Postgres"
+    },
+    {
+      "id": "auth",
+      "label": "Supabase Auth"
+    },
+    {
+      "id": "llm",
+      "label": "Groq / Gemini"
+    },
+    {
+      "id": "boards",
+      "label": "ATS board APIs"
+    }
+  ],
+  "edges": [
+    {
+      "from": "op",
+      "to": "app"
+    },
+    {
+      "from": "app",
+      "to": "db"
+    },
+    {
+      "from": "app",
+      "to": "auth"
+    },
+    {
+      "from": "app",
+      "to": "llm",
+      "optional": true
+    },
+    {
+      "from": "app",
+      "to": "boards"
+    }
+  ],
+  "sections": [
+    "§28",
+    "§29"
+  ],
+  "source": "docs/project/architecture/SYSTEM_ARCHITECTURE.md",
+  "labels": [
+    "Operator",
+    "Next.js CareerOS",
+    "Supabase Postgres",
+    "Supabase Auth",
+    "Groq / Gemini",
+    "ATS board APIs"
+  ],
+  "categories": [],
+  "mobileOrder": [
+    "op",
+    "app",
+    "db",
+    "auth",
+    "llm",
+    "boards"
+  ],
+  "sourceReferences": [
+    "docs/project/architecture/SYSTEM_ARCHITECTURE.md"
+  ]
+}

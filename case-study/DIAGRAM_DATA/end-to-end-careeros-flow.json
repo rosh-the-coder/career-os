@@ -1,0 +1,125 @@
+{
+  "id": "end-to-end-careeros-flow",
+  "nodes": [
+    {
+      "id": "discover",
+      "label": "Discover / Import"
+    },
+    {
+      "id": "parse",
+      "label": "Parse"
+    },
+    {
+      "id": "filter",
+      "label": "Hard filter"
+    },
+    {
+      "id": "score",
+      "label": "Score ± LLM"
+    },
+    {
+      "id": "review",
+      "label": "Review"
+    },
+    {
+      "id": "resume",
+      "label": "Resume v2/v3/v4"
+    },
+    {
+      "id": "validate",
+      "label": "Validate"
+    },
+    {
+      "id": "export",
+      "label": "Export"
+    },
+    {
+      "id": "studio",
+      "label": "Studio"
+    },
+    {
+      "id": "track",
+      "label": "Track"
+    },
+    {
+      "id": "submit",
+      "label": "External submit"
+    }
+  ],
+  "edges": [
+    {
+      "from": "discover",
+      "to": "parse"
+    },
+    {
+      "from": "parse",
+      "to": "filter"
+    },
+    {
+      "from": "filter",
+      "to": "score"
+    },
+    {
+      "from": "score",
+      "to": "review"
+    },
+    {
+      "from": "review",
+      "to": "resume"
+    },
+    {
+      "from": "resume",
+      "to": "validate"
+    },
+    {
+      "from": "validate",
+      "to": "export"
+    },
+    {
+      "from": "export",
+      "to": "studio"
+    },
+    {
+      "from": "studio",
+      "to": "track"
+    },
+    {
+      "from": "track",
+      "to": "submit"
+    }
+  ],
+  "sections": [
+    "§29"
+  ],
+  "source": "docs/project/architecture/SYSTEM_ARCHITECTURE.md",
+  "labels": [
+    "Discover / Import",
+    "Parse",
+    "Hard filter",
+    "Score ± LLM",
+    "Review",
+    "Resume v2/v3/v4",
+    "Validate",
+    "Export",
+    "Studio",
+    "Track",
+    "External submit"
+  ],
+  "categories": [],
+  "mobileOrder": [
+    "discover",
+    "parse",
+    "filter",
+    "score",
+    "review",
+    "resume",
+    "validate",
+    "export",
+    "studio",
+    "track",
+    "submit"
+  ],
+  "sourceReferences": [
+    "docs/project/architecture/SYSTEM_ARCHITECTURE.md"
+  ]
+}

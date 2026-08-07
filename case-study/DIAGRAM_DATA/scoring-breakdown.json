@@ -1,0 +1,82 @@
+{
+  "id": "scoring-breakdown",
+  "nodes": [
+    {
+      "id": "skills",
+      "label": "skillsOverlap",
+      "weight": 20
+    },
+    {
+      "id": "evidence",
+      "label": "evidenceStrength",
+      "weight": 16
+    },
+    {
+      "id": "projects",
+      "label": "projectRelevance",
+      "weight": 14
+    },
+    {
+      "id": "seniority",
+      "label": "seniorityFit",
+      "weight": 22
+    },
+    {
+      "id": "elig",
+      "label": "currentEligibility",
+      "weight": 10
+    },
+    {
+      "id": "permit",
+      "label": "longTermPermit",
+      "weight": 6
+    },
+    {
+      "id": "loc",
+      "label": "locationFit",
+      "weight": 6
+    },
+    {
+      "id": "salary",
+      "label": "salaryFit",
+      "weight": 3
+    },
+    {
+      "id": "career",
+      "label": "careerAlignment",
+      "weight": 3
+    }
+  ],
+  "edges": [],
+  "sections": [
+    "§31",
+    "§38"
+  ],
+  "source": "src/lib/types.ts SCORE_WEIGHTS",
+  "labels": [
+    "skillsOverlap",
+    "evidenceStrength",
+    "projectRelevance",
+    "seniorityFit",
+    "currentEligibility",
+    "longTermPermit",
+    "locationFit",
+    "salaryFit",
+    "careerAlignment"
+  ],
+  "categories": [],
+  "mobileOrder": [
+    "skills",
+    "evidence",
+    "projects",
+    "seniority",
+    "elig",
+    "permit",
+    "loc",
+    "salary",
+    "career"
+  ],
+  "sourceReferences": [
+    "src/lib/types.ts SCORE_WEIGHTS"
+  ]
+}

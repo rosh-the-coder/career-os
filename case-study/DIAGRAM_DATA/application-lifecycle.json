@@ -1,0 +1,69 @@
+{
+  "id": "application-lifecycle",
+  "nodes": [
+    {
+      "id": "applied",
+      "label": "Applied"
+    },
+    {
+      "id": "interviewed",
+      "label": "Interviewed"
+    },
+    {
+      "id": "rejected",
+      "label": "Rejected"
+    },
+    {
+      "id": "offer",
+      "label": "Offer"
+    },
+    {
+      "id": "accepted",
+      "label": "Accepted"
+    }
+  ],
+  "edges": [
+    {
+      "from": "applied",
+      "to": "interviewed"
+    },
+    {
+      "from": "interviewed",
+      "to": "rejected"
+    },
+    {
+      "from": "interviewed",
+      "to": "offer"
+    },
+    {
+      "from": "offer",
+      "to": "accepted"
+    },
+    {
+      "from": "offer",
+      "to": "rejected"
+    }
+  ],
+  "sections": [
+    "§42"
+  ],
+  "source": "src/lib/applications/constants.ts",
+  "labels": [
+    "Applied",
+    "Interviewed",
+    "Rejected",
+    "Offer",
+    "Accepted"
+  ],
+  "categories": [],
+  "mobileOrder": [
+    "applied",
+    "interviewed",
+    "rejected",
+    "offer",
+    "accepted"
+  ],
+  "sourceReferences": [
+    "src/lib/applications/constants.ts"
+  ]
+}

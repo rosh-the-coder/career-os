@@ -1,0 +1,153 @@
+{
+  "id": "hard-filter-decision-tree",
+  "nodes": [
+    {
+      "id": "geo",
+      "label": "UK/US-only geo?"
+    },
+    {
+      "id": "unpaid",
+      "label": "Unpaid / intern?"
+    },
+    {
+      "id": "senior",
+      "label": "Director/VP/Principal/Staff+?"
+    },
+    {
+      "id": "cad",
+      "label": "Mechanical CAD design eng?"
+    },
+    {
+      "id": "ml",
+      "label": "Deep ML / PhD required?"
+    },
+    {
+      "id": "video",
+      "label": "Video/motion (toggle)?"
+    },
+    {
+      "id": "yoe",
+      "label": "YOE thresholds?"
+    },
+    {
+      "id": "soft",
+      "label": "Soft flags"
+    },
+    {
+      "id": "ok",
+      "label": "Continue to score"
+    },
+    {
+      "id": "reject",
+      "label": "Hard reject"
+    }
+  ],
+  "edges": [
+    {
+      "from": "geo",
+      "to": "reject",
+      "when": "yes"
+    },
+    {
+      "from": "geo",
+      "to": "unpaid",
+      "when": "no"
+    },
+    {
+      "from": "unpaid",
+      "to": "reject",
+      "when": "yes"
+    },
+    {
+      "from": "unpaid",
+      "to": "senior",
+      "when": "no"
+    },
+    {
+      "from": "senior",
+      "to": "reject",
+      "when": "yes"
+    },
+    {
+      "from": "senior",
+      "to": "cad",
+      "when": "no"
+    },
+    {
+      "from": "cad",
+      "to": "reject",
+      "when": "yes"
+    },
+    {
+      "from": "cad",
+      "to": "ml",
+      "when": "no"
+    },
+    {
+      "from": "ml",
+      "to": "reject",
+      "when": "yes"
+    },
+    {
+      "from": "ml",
+      "to": "video",
+      "when": "no"
+    },
+    {
+      "from": "video",
+      "to": "reject",
+      "when": "yes+off"
+    },
+    {
+      "from": "video",
+      "to": "yoe",
+      "when": "no"
+    },
+    {
+      "from": "yoe",
+      "to": "reject",
+      "when": "hard"
+    },
+    {
+      "from": "yoe",
+      "to": "soft",
+      "when": "pass"
+    },
+    {
+      "from": "soft",
+      "to": "ok"
+    }
+  ],
+  "sections": [
+    "§45"
+  ],
+  "source": "src/lib/scoring/hard-filters.ts",
+  "labels": [
+    "UK/US-only geo?",
+    "Unpaid / intern?",
+    "Director/VP/Principal/Staff+?",
+    "Mechanical CAD design eng?",
+    "Deep ML / PhD required?",
+    "Video/motion (toggle)?",
+    "YOE thresholds?",
+    "Soft flags",
+    "Continue to score",
+    "Hard reject"
+  ],
+  "categories": [],
+  "mobileOrder": [
+    "geo",
+    "unpaid",
+    "senior",
+    "cad",
+    "ml",
+    "video",
+    "yoe",
+    "soft",
+    "ok",
+    "reject"
+  ],
+  "sourceReferences": [
+    "src/lib/scoring/hard-filters.ts"
+  ]
+}

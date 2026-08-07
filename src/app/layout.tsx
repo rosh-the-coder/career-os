@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fraunces, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/app-shell";
+import { CaseStudyModeBanner } from "@/components/case-study-mode-banner";
 
 const plexSans = IBM_Plex_Sans({
   subsets: ["latin"],
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${plexSans.variable} ${fraunces.variable} ${plexMono.variable}`}>
       <body className="font-sans">
+        <CaseStudyModeBanner />
         <AppShell>{children}</AppShell>
       </body>
     </html>

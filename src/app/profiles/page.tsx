@@ -1,11 +1,14 @@
 import { EstimateTooltip, PageHeader, Panel } from "@/components/ui";
 import { prisma } from "@/lib/db/prisma";
 import { parseJsonArray } from "@/lib/utils";
+import { getPrimaryUser } from "@/lib/auth/user";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProfilesPage() {
-  const user = await prisma.user.findFirst({
+  const primary = await getPrimaryUser();
+  const user = await prisma.user.findUnique({
+    where: { id: primary.id },
     include: {
       careerProfiles: { orderBy: { name: "asc" } },
       experiences: { orderBy: { sortOrder: "asc" } },

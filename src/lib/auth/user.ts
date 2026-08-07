@@ -1,15 +1,31 @@
 import { prisma } from "@/lib/db/prisma";
 import { createSupabaseServerClient } from "@/lib/auth/supabase-server";
 import { isDevAuthBypass, isEmailAllowed } from "@/lib/auth/supabase";
+import { CASE_STUDY_USER_EMAIL, isCaseStudyMode } from "@/lib/case-study/mode";
 
 /**
  * Resolves the app user:
+ * - CAREEROS_CASE_STUDY_MODE → isolated demo operator (never the real inventory)
  * - DEV_BYPASS_AUTH → first seeded user
  * - Otherwise → Supabase session email mapped to Prisma User
  */
 export async function getPrimaryUser() {
+  if (isCaseStudyMode()) {
+    const demo = await prisma.user.findUnique({
+      where: { email: CASE_STUDY_USER_EMAIL },
+      include: { settings: true },
+    });
+    if (!demo) {
+      throw new Error(
+        "Case-study mode is on but demo user is missing. Run: npm run seed:case-study",
+      );
+    }
+    return demo;
+  }
+
   if (isDevAuthBypass()) {
     const user = await prisma.user.findFirst({
+      where: { NOT: { email: CASE_STUDY_USER_EMAIL } },
       include: { settings: true },
       orderBy: { createdAt: "asc" },
     });

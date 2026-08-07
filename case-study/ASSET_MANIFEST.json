@@ -1,0 +1,1080 @@
+{
+  "version": 1,
+  "generated": "2026-08-04",
+  "rules": {
+    "screenshotsOnlyFromAct6": true,
+    "neverBlankGrey": true,
+    "replacePlaceholderKeepingFilename": true
+  },
+  "assets": [
+    {
+      "id": "01-dashboard-overview",
+      "type": "screenshot",
+      "filename": "01-dashboard-overview.webp",
+      "folder": "public/assets/screens",
+      "placeholder": "public/assets/placeholders/01-dashboard-overview.svg",
+      "storyboardSections": [
+        "§36"
+      ],
+      "status": "missing",
+      "route": "/dashboard",
+      "viewport": "1440x1000",
+      "requiredState": "seeded demo: scored + rejected + materials-ready",
+      "redactions": [
+        "email",
+        "phone",
+        "private URLs",
+        "recruiter names",
+        "private notes"
+      ],
+      "caption": "CareerOS operational dashboard",
+      "annotations": [
+        "pipeline counts",
+        "Discover CTA",
+        "priority jobs"
+      ]
+    },
+    {
+      "id": "02-jobs-ranked-list",
+      "type": "screenshot",
+      "filename": "02-jobs-ranked-list.webp",
+      "folder": "public/assets/screens",
+      "placeholder": "public/assets/placeholders/02-jobs-ranked-list.svg",
+      "storyboardSections": [
+        "§36",
+        "act6-jobs"
+      ],
+      "status": "missing",
+      "route": "/jobs",
+      "viewport": "1440x1000",
+      "requiredState": "mixed scored/rejected",
+      "redactions": [
+        "email",
+        "phone",
+        "private URLs",
+        "recruiter names",
+        "private notes"
+      ],
+      "caption": "Ranked and rejected listings",
+      "annotations": [
+        "score",
+        "status",
+        "profile"
+      ]
+    },
+    {
+      "id": "03-job-import",
+      "type": "screenshot",
+      "filename": "03-job-import.webp",
+      "folder": "public/assets/screens",
+      "placeholder": "public/assets/placeholders/03-job-import.svg",
+      "storyboardSections": [
+        "act6-import"
+      ],
+      "status": "missing",
+      "route": "/jobs/new",
+      "viewport": "1440x1000",
+      "requiredState": "empty form",
+      "redactions": [
+        "email",
+        "phone",
+        "private URLs",
+        "recruiter names",
+        "private notes"
+      ],
+      "caption": "Controlled job ingestion",
+      "annotations": [
+        "paste",
+        "URL"
+      ]
+    },
+    {
+      "id": "04-job-score-breakdown",
+      "type": "screenshot",
+      "filename": "04-job-score-breakdown.webp",
+      "folder": "public/assets/screens",
+      "placeholder": "public/assets/placeholders/04-job-score-breakdown.svg",
+      "storyboardSections": [
+        "§38"
+      ],
+      "status": "missing",
+      "route": "/jobs/[scored-id]",
+      "viewport": "1440x1000",
+      "requiredState": "North Harbor Labs scored 78",
+      "redactions": [
+        "email",
+        "phone",
+        "private URLs",
+        "recruiter names",
+        "private notes"
+      ],
+      "caption": "Explainable multi-factor fit",
+      "annotations": [
+        "1 score total",
+        "2 dimension cards",
+        "3 strengths/gaps"
+      ]
+    },
+    {
+      "id": "05-hard-reject",
+      "type": "screenshot",
+      "filename": "05-hard-reject.webp",
+      "folder": "public/assets/screens",
+      "placeholder": "public/assets/placeholders/05-hard-reject.svg",
+      "storyboardSections": [
+        "§39"
+      ],
+      "status": "missing",
+      "route": "/jobs/[rejected-id]",
+      "viewport": "1440x1000",
+      "requiredState": "principal CAD reject",
+      "redactions": [
+        "email",
+        "phone",
+        "private URLs",
+        "recruiter names",
+        "private notes"
+      ],
+      "caption": "Deterministic eligibility gate",
+      "annotations": [
+        "reject banner",
+        "reason"
+      ]
+    },
+    {
+      "id": "06-eligibility-soft-flags",
+      "type": "screenshot",
+      "filename": "06-eligibility-soft-flags.webp",
+      "folder": "public/assets/screens",
+      "placeholder": "public/assets/placeholders/06-eligibility-soft-flags.svg",
+      "storyboardSections": [
+        "§38",
+        "§06-product"
+      ],
+      "status": "missing",
+      "route": "/jobs/[scored-id]",
+      "viewport": "1440x1000",
+      "requiredState": "no_sponsorship soft flag",
+      "redactions": [
+        "email",
+        "phone",
+        "private URLs",
+        "recruiter names",
+        "private notes"
+      ],
+      "caption": "Soft flags for human review",
+      "annotations": [
+        "soft flag chip"
+      ]
+    },
+    {
+      "id": "07-approve-queue",
+      "type": "screenshot",
+      "filename": "07-approve-queue.webp",
+      "folder": "public/assets/screens",
+      "placeholder": "public/assets/placeholders/07-approve-queue.svg",
+      "storyboardSections": [
+        "§37"
+      ],
+      "status": "missing",
+      "route": "/approve",
+      "viewport": "1440x1000",
+      "requiredState": "scored queue",
+      "redactions": [
+        "email",
+        "phone",
+        "private URLs",
+        "recruiter names",
+        "private notes"
+      ],
+      "caption": "Human triage before materials",
+      "annotations": [
+        "queue",
+        "prepare packs"
+      ]
+    },
+    {
+      "id": "08-profile-recommendation",
+      "type": "screenshot",
+      "filename": "08-profile-recommendation.webp",
+      "folder": "public/assets/screens",
+      "placeholder": "public/assets/placeholders/08-profile-recommendation.svg",
+      "storyboardSections": [
+        "act6-profile"
+      ],
+      "status": "missing",
+      "route": "/jobs/[scored-id]",
+      "viewport": "1440x1000",
+      "requiredState": "UX Engineer profile pick",
+      "redactions": [
+        "email",
+        "phone",
+        "private URLs",
+        "recruiter names",
+        "private notes"
+      ],
+      "caption": "Role profile recommendation",
+      "annotations": [
+        "recommended profile"
+      ]
+    },
+    {
+      "id": "09-project-recommendation",
+      "type": "screenshot",
+      "filename": "09-project-recommendation.webp",
+      "folder": "public/assets/screens",
+      "placeholder": "public/assets/placeholders/09-project-recommendation.svg",
+      "storyboardSections": [
+        "act6-projects"
+      ],
+      "status": "missing",
+      "route": "/jobs/[materials-id]",
+      "viewport": "1440x1000",
+      "requiredState": "recommended projects",
+      "redactions": [
+        "email",
+        "phone",
+        "private URLs",
+        "recruiter names",
+        "private notes"
+      ],
+      "caption": "Project recommendation for packs",
+      "annotations": [
+        "project list"
+      ]
+    },
+    {
+      "id": "10-resume-studio-overview",
+      "type": "screenshot",
+      "filename": "10-resume-studio-overview.webp",
+      "folder": "public/assets/screens",
+      "placeholder": "public/assets/placeholders/10-resume-studio-overview.svg",
+      "storyboardSections": [
+        "§40"
+      ],
+      "status": "missing",
+      "route": "/resume-studio",
+      "viewport": "1440x1000",
+      "requiredState": "versions present",
+      "redactions": [
+        "email",
+        "phone",
+        "private URLs",
+        "recruiter names",
+        "private notes"
+      ],
+      "caption": "Resume Studio review surface",
+      "annotations": [
+        "validation",
+        "downloads",
+        "composition"
+      ]
+    },
+    {
+      "id": "11-resume-validation",
+      "type": "screenshot",
+      "filename": "11-resume-validation.webp",
+      "folder": "public/assets/screens",
+      "placeholder": "public/assets/placeholders/11-resume-validation.svg",
+      "storyboardSections": [
+        "§40",
+        "§47"
+      ],
+      "status": "missing",
+      "route": "/resume-studio",
+      "viewport": "1440x1000",
+      "requiredState": "warning validation",
+      "redactions": [
+        "email",
+        "phone",
+        "private URLs",
+        "recruiter names",
+        "private notes"
+      ],
+      "caption": "Claim validation warnings",
+      "annotations": [
+        "warning badge",
+        "warning list"
+      ]
+    },
+    {
+      "id": "12-resume-keyword-fit",
+      "type": "screenshot",
+      "filename": "12-resume-keyword-fit.webp",
+      "folder": "public/assets/screens",
+      "placeholder": "public/assets/placeholders/12-resume-keyword-fit.svg",
+      "storyboardSections": [
+        "act6-ats"
+      ],
+      "status": "missing",
+      "route": "/jobs/[materials-id]",
+      "viewport": "1440x1000",
+      "requiredState": "optimizeJson present",
+      "redactions": [
+        "email",
+        "phone",
+        "private URLs",
+        "recruiter names",
+        "private notes"
+      ],
+      "caption": "ATS keyword fit tooling",
+      "annotations": [
+        "coverage",
+        "suggest",
+        "apply gated"
+      ]
+    },
+    {
+      "id": "13-resume-version-lineage",
+      "type": "screenshot",
+      "filename": "13-resume-version-lineage.webp",
+      "folder": "public/assets/screens",
+      "placeholder": "public/assets/placeholders/13-resume-version-lineage.svg",
+      "storyboardSections": [
+        "§40",
+        "act7-lineage"
+      ],
+      "status": "missing",
+      "route": "/resume-studio",
+      "viewport": "1440x1000",
+      "requiredState": "parent/child",
+      "redactions": [
+        "email",
+        "phone",
+        "private URLs",
+        "recruiter names",
+        "private notes"
+      ],
+      "caption": "Append-only resume lineage",
+      "annotations": [
+        "parent",
+        "child"
+      ]
+    },
+    {
+      "id": "14-generated-resume-preview",
+      "type": "screenshot",
+      "filename": "14-generated-resume-preview.webp",
+      "folder": "public/assets/screens",
+      "placeholder": "public/assets/placeholders/14-generated-resume-preview.svg",
+      "storyboardSections": [
+        "§41"
+      ],
+      "status": "missing",
+      "route": "export preview",
+      "viewport": "1440x1000",
+      "requiredState": "redacted demo CV",
+      "redactions": [
+        "email",
+        "phone",
+        "private URLs",
+        "recruiter names",
+        "private notes"
+      ],
+      "caption": "Generated resume artifact",
+      "annotations": [
+        "contact redacted",
+        "projects"
+      ]
+    },
+    {
+      "id": "15-applications-tracker",
+      "type": "screenshot",
+      "filename": "15-applications-tracker.webp",
+      "folder": "public/assets/screens",
+      "placeholder": "public/assets/placeholders/15-applications-tracker.svg",
+      "storyboardSections": [
+        "§42"
+      ],
+      "status": "missing",
+      "route": "/applications",
+      "viewport": "1440x1000",
+      "requiredState": "demo rows no PII",
+      "redactions": [
+        "email",
+        "phone",
+        "private URLs",
+        "recruiter names",
+        "private notes"
+      ],
+      "caption": "Applications tracker",
+      "annotations": [
+        "status tags",
+        "next actions"
+      ]
+    },
+    {
+      "id": "16-settings-constraints",
+      "type": "screenshot",
+      "filename": "16-settings-constraints.webp",
+      "folder": "public/assets/screens",
+      "placeholder": "public/assets/placeholders/16-settings-constraints.svg",
+      "storyboardSections": [
+        "act6-settings"
+      ],
+      "status": "missing",
+      "route": "/settings",
+      "viewport": "1440x1000",
+      "requiredState": "demo contacts",
+      "redactions": [
+        "email",
+        "phone",
+        "private URLs",
+        "recruiter names",
+        "private notes"
+      ],
+      "caption": "Constraint surface",
+      "annotations": [
+        "salary floor",
+        "video toggle",
+        "batch target"
+      ]
+    },
+    {
+      "id": "17-provider-fallback-state",
+      "type": "screenshot",
+      "filename": "17-provider-fallback-state.webp",
+      "folder": "public/assets/screens",
+      "placeholder": "public/assets/placeholders/17-provider-fallback-state.svg",
+      "storyboardSections": [
+        "§33",
+        "§17-screen"
+      ],
+      "status": "missing",
+      "route": "/jobs/[fallback-id]",
+      "viewport": "1440x1000",
+      "requiredState": "llm_rate_limit flag",
+      "redactions": [
+        "email",
+        "phone",
+        "private URLs",
+        "recruiter names",
+        "private notes"
+      ],
+      "caption": "Graceful LLM degradation",
+      "annotations": [
+        "soft flag",
+        "modelVersion"
+      ]
+    },
+    {
+      "id": "18-empty-state",
+      "type": "screenshot",
+      "filename": "18-empty-state.webp",
+      "folder": "public/assets/screens",
+      "placeholder": "public/assets/placeholders/18-empty-state.svg",
+      "storyboardSections": [
+        "§10-empty"
+      ],
+      "status": "missing",
+      "route": "/resume-studio",
+      "viewport": "1440x1000",
+      "requiredState": "no versions (optional)",
+      "redactions": [
+        "email",
+        "phone",
+        "private URLs",
+        "recruiter names",
+        "private notes"
+      ],
+      "caption": "Empty Studio state",
+      "annotations": [
+        "empty"
+      ]
+    },
+    {
+      "id": "19-mobile-dashboard",
+      "type": "screenshot",
+      "filename": "19-mobile-dashboard.webp",
+      "folder": "public/assets/screens",
+      "placeholder": "public/assets/placeholders/19-mobile-dashboard.svg",
+      "storyboardSections": [
+        "§36-mobile"
+      ],
+      "status": "missing",
+      "route": "/dashboard",
+      "viewport": "390x844",
+      "requiredState": "390x844",
+      "redactions": [
+        "email",
+        "phone",
+        "private URLs",
+        "recruiter names",
+        "private notes"
+      ],
+      "caption": "Mobile dashboard",
+      "annotations": []
+    },
+    {
+      "id": "20-mobile-job-detail",
+      "type": "screenshot",
+      "filename": "20-mobile-job-detail.webp",
+      "folder": "public/assets/screens",
+      "placeholder": "public/assets/placeholders/20-mobile-job-detail.svg",
+      "storyboardSections": [
+        "§38-mobile"
+      ],
+      "status": "missing",
+      "route": "/jobs/[scored-id]",
+      "viewport": "390x844",
+      "requiredState": "390x844",
+      "redactions": [
+        "email",
+        "phone",
+        "private URLs",
+        "recruiter names",
+        "private notes"
+      ],
+      "caption": "Mobile job detail",
+      "annotations": []
+    },
+    {
+      "id": "title-breath",
+      "type": "animation",
+      "filename": "title-breath.svg",
+      "folder": "public/assets/animations",
+      "placeholder": "public/assets/placeholders/title-breath.svg",
+      "storyboardSections": [
+        "§00"
+      ],
+      "status": "placeholder",
+      "route": null,
+      "viewport": null,
+      "requiredState": "motion asset or CSS/Lottie implementation",
+      "redactions": [],
+      "caption": "title-breath",
+      "annotations": []
+    },
+    {
+      "id": "antipromise",
+      "type": "animation",
+      "filename": "antipromise.svg",
+      "folder": "public/assets/animations",
+      "placeholder": "public/assets/placeholders/antipromise.svg",
+      "storyboardSections": [
+        "§01"
+      ],
+      "status": "placeholder",
+      "route": null,
+      "viewport": null,
+      "requiredState": "motion asset or CSS/Lottie implementation",
+      "redactions": [],
+      "caption": "antipromise",
+      "annotations": []
+    },
+    {
+      "id": "rejection-timeline",
+      "type": "animation",
+      "filename": "rejection-timeline.svg",
+      "folder": "public/assets/animations",
+      "placeholder": "public/assets/placeholders/rejection-timeline.svg",
+      "storyboardSections": [
+        "§03"
+      ],
+      "status": "placeholder",
+      "route": null,
+      "viewport": null,
+      "requiredState": "motion asset or CSS/Lottie implementation",
+      "redactions": [],
+      "caption": "rejection-timeline",
+      "annotations": []
+    },
+    {
+      "id": "tab-avalanche",
+      "type": "animation",
+      "filename": "tab-avalanche.svg",
+      "folder": "public/assets/animations",
+      "placeholder": "public/assets/placeholders/tab-avalanche.svg",
+      "storyboardSections": [
+        "§04"
+      ],
+      "status": "placeholder",
+      "route": null,
+      "viewport": null,
+      "requiredState": "motion asset or CSS/Lottie implementation",
+      "redactions": [],
+      "caption": "tab-avalanche",
+      "annotations": []
+    },
+    {
+      "id": "tool-rain",
+      "type": "animation",
+      "filename": "tool-rain.svg",
+      "folder": "public/assets/animations",
+      "placeholder": "public/assets/placeholders/tool-rain.svg",
+      "storyboardSections": [
+        "§05"
+      ],
+      "status": "placeholder",
+      "route": null,
+      "viewport": null,
+      "requiredState": "motion asset or CSS/Lottie implementation",
+      "redactions": [],
+      "caption": "tool-rain",
+      "annotations": []
+    },
+    {
+      "id": "wrong-room",
+      "type": "animation",
+      "filename": "wrong-room.svg",
+      "folder": "public/assets/animations",
+      "placeholder": "public/assets/placeholders/wrong-room.svg",
+      "storyboardSections": [
+        "§06"
+      ],
+      "status": "placeholder",
+      "route": null,
+      "viewport": null,
+      "requiredState": "motion asset or CSS/Lottie implementation",
+      "redactions": [],
+      "caption": "wrong-room",
+      "annotations": []
+    },
+    {
+      "id": "eligibility-fog",
+      "type": "animation",
+      "filename": "eligibility-fog.svg",
+      "folder": "public/assets/animations",
+      "placeholder": "public/assets/placeholders/eligibility-fog.svg",
+      "storyboardSections": [
+        "§07"
+      ],
+      "status": "placeholder",
+      "route": null,
+      "viewport": null,
+      "requiredState": "motion asset or CSS/Lottie implementation",
+      "redactions": [],
+      "caption": "eligibility-fog",
+      "annotations": []
+    },
+    {
+      "id": "daily-loop",
+      "type": "animation",
+      "filename": "daily-loop.svg",
+      "folder": "public/assets/animations",
+      "placeholder": "public/assets/placeholders/daily-loop.svg",
+      "storyboardSections": [
+        "§10"
+      ],
+      "status": "placeholder",
+      "route": null,
+      "viewport": null,
+      "requiredState": "motion asset or CSS/Lottie implementation",
+      "redactions": [],
+      "caption": "daily-loop",
+      "annotations": []
+    },
+    {
+      "id": "time-bar",
+      "type": "animation",
+      "filename": "time-bar.svg",
+      "folder": "public/assets/animations",
+      "placeholder": "public/assets/placeholders/time-bar.svg",
+      "storyboardSections": [
+        "§11",
+        "§12"
+      ],
+      "status": "placeholder",
+      "route": null,
+      "viewport": null,
+      "requiredState": "motion asset or CSS/Lottie implementation",
+      "redactions": [],
+      "caption": "time-bar",
+      "annotations": []
+    },
+    {
+      "id": "twenty-percent",
+      "type": "animation",
+      "filename": "twenty-percent.svg",
+      "folder": "public/assets/animations",
+      "placeholder": "public/assets/placeholders/twenty-percent.svg",
+      "storyboardSections": [
+        "§12"
+      ],
+      "status": "placeholder",
+      "route": null,
+      "viewport": null,
+      "requiredState": "motion asset or CSS/Lottie implementation",
+      "redactions": [],
+      "caption": "twenty-percent",
+      "annotations": []
+    },
+    {
+      "id": "ecosystem-orbit",
+      "type": "animation",
+      "filename": "ecosystem-orbit.svg",
+      "folder": "public/assets/animations",
+      "placeholder": "public/assets/placeholders/ecosystem-orbit.svg",
+      "storyboardSections": [
+        "§16",
+        "§17",
+        "§18"
+      ],
+      "status": "placeholder",
+      "route": null,
+      "viewport": null,
+      "requiredState": "motion asset or CSS/Lottie implementation",
+      "redactions": [],
+      "caption": "ecosystem-orbit",
+      "annotations": []
+    },
+    {
+      "id": "pipeline-flythrough",
+      "type": "animation",
+      "filename": "pipeline-flythrough.svg",
+      "folder": "public/assets/animations",
+      "placeholder": "public/assets/placeholders/pipeline-flythrough.svg",
+      "storyboardSections": [
+        "§29"
+      ],
+      "status": "placeholder",
+      "route": null,
+      "viewport": null,
+      "requiredState": "motion asset or CSS/Lottie implementation",
+      "redactions": [],
+      "caption": "pipeline-flythrough",
+      "annotations": []
+    },
+    {
+      "id": "nested-rings",
+      "type": "animation",
+      "filename": "nested-rings.svg",
+      "folder": "public/assets/animations",
+      "placeholder": "public/assets/placeholders/nested-rings.svg",
+      "storyboardSections": [
+        "§30"
+      ],
+      "status": "placeholder",
+      "route": null,
+      "viewport": null,
+      "requiredState": "motion asset or CSS/Lottie implementation",
+      "redactions": [],
+      "caption": "nested-rings",
+      "annotations": []
+    },
+    {
+      "id": "scoring-constellation",
+      "type": "animation",
+      "filename": "scoring-constellation.svg",
+      "folder": "public/assets/animations",
+      "placeholder": "public/assets/placeholders/scoring-constellation.svg",
+      "storyboardSections": [
+        "§31"
+      ],
+      "status": "placeholder",
+      "route": null,
+      "viewport": null,
+      "requiredState": "motion asset or CSS/Lottie implementation",
+      "redactions": [],
+      "caption": "scoring-constellation",
+      "annotations": []
+    },
+    {
+      "id": "evidence-scan",
+      "type": "animation",
+      "filename": "evidence-scan.svg",
+      "folder": "public/assets/animations",
+      "placeholder": "public/assets/placeholders/evidence-scan.svg",
+      "storyboardSections": [
+        "§32"
+      ],
+      "status": "placeholder",
+      "route": null,
+      "viewport": null,
+      "requiredState": "motion asset or CSS/Lottie implementation",
+      "redactions": [],
+      "caption": "evidence-scan",
+      "annotations": []
+    },
+    {
+      "id": "provider-relay",
+      "type": "animation",
+      "filename": "provider-relay.svg",
+      "folder": "public/assets/animations",
+      "placeholder": "public/assets/placeholders/provider-relay.svg",
+      "storyboardSections": [
+        "§33"
+      ],
+      "status": "placeholder",
+      "route": null,
+      "viewport": null,
+      "requiredState": "motion asset or CSS/Lottie implementation",
+      "redactions": [],
+      "caption": "provider-relay",
+      "annotations": []
+    },
+    {
+      "id": "anti-chart",
+      "type": "animation",
+      "filename": "anti-chart.svg",
+      "folder": "public/assets/animations",
+      "placeholder": "public/assets/placeholders/anti-chart.svg",
+      "storyboardSections": [
+        "§55"
+      ],
+      "status": "placeholder",
+      "route": null,
+      "viewport": null,
+      "requiredState": "motion asset or CSS/Lottie implementation",
+      "redactions": [],
+      "caption": "anti-chart",
+      "annotations": []
+    },
+    {
+      "id": "diagram-fragmented-workflow",
+      "type": "diagram",
+      "filename": "fragmented-workflow.json",
+      "folder": "DIAGRAM_DATA",
+      "placeholder": "public/assets/placeholders/fragmented-workflow.svg",
+      "storyboardSections": [],
+      "status": "ready",
+      "route": null,
+      "viewport": null,
+      "requiredState": "render from DIAGRAM_DATA JSON",
+      "redactions": [],
+      "caption": "fragmented-workflow",
+      "annotations": [],
+      "dataFile": "DIAGRAM_DATA/fragmented-workflow.json"
+    },
+    {
+      "id": "diagram-daily-job-search-loop",
+      "type": "diagram",
+      "filename": "daily-job-search-loop.json",
+      "folder": "DIAGRAM_DATA",
+      "placeholder": "public/assets/placeholders/daily-job-search-loop.svg",
+      "storyboardSections": [],
+      "status": "ready",
+      "route": null,
+      "viewport": null,
+      "requiredState": "render from DIAGRAM_DATA JSON",
+      "redactions": [],
+      "caption": "daily-job-search-loop",
+      "annotations": [],
+      "dataFile": "DIAGRAM_DATA/daily-job-search-loop.json"
+    },
+    {
+      "id": "diagram-tool-ecosystem",
+      "type": "diagram",
+      "filename": "tool-ecosystem.json",
+      "folder": "DIAGRAM_DATA",
+      "placeholder": "public/assets/placeholders/tool-ecosystem.svg",
+      "storyboardSections": [],
+      "status": "ready",
+      "route": null,
+      "viewport": null,
+      "requiredState": "render from DIAGRAM_DATA JSON",
+      "redactions": [],
+      "caption": "tool-ecosystem",
+      "annotations": [],
+      "dataFile": "DIAGRAM_DATA/tool-ecosystem.json"
+    },
+    {
+      "id": "diagram-human-vs-ai",
+      "type": "diagram",
+      "filename": "human-vs-ai.json",
+      "folder": "DIAGRAM_DATA",
+      "placeholder": "public/assets/placeholders/human-vs-ai.svg",
+      "storyboardSections": [],
+      "status": "ready",
+      "route": null,
+      "viewport": null,
+      "requiredState": "render from DIAGRAM_DATA JSON",
+      "redactions": [],
+      "caption": "human-vs-ai",
+      "annotations": [],
+      "dataFile": "DIAGRAM_DATA/human-vs-ai.json"
+    },
+    {
+      "id": "diagram-end-to-end-careeros-flow",
+      "type": "diagram",
+      "filename": "end-to-end-careeros-flow.json",
+      "folder": "DIAGRAM_DATA",
+      "placeholder": "public/assets/placeholders/end-to-end-careeros-flow.svg",
+      "storyboardSections": [],
+      "status": "ready",
+      "route": null,
+      "viewport": null,
+      "requiredState": "render from DIAGRAM_DATA JSON",
+      "redactions": [],
+      "caption": "end-to-end-careeros-flow",
+      "annotations": [],
+      "dataFile": "DIAGRAM_DATA/end-to-end-careeros-flow.json"
+    },
+    {
+      "id": "diagram-hard-filter-decision-tree",
+      "type": "diagram",
+      "filename": "hard-filter-decision-tree.json",
+      "folder": "DIAGRAM_DATA",
+      "placeholder": "public/assets/placeholders/hard-filter-decision-tree.svg",
+      "storyboardSections": [],
+      "status": "ready",
+      "route": null,
+      "viewport": null,
+      "requiredState": "render from DIAGRAM_DATA JSON",
+      "redactions": [],
+      "caption": "hard-filter-decision-tree",
+      "annotations": [],
+      "dataFile": "DIAGRAM_DATA/hard-filter-decision-tree.json"
+    },
+    {
+      "id": "diagram-scoring-breakdown",
+      "type": "diagram",
+      "filename": "scoring-breakdown.json",
+      "folder": "DIAGRAM_DATA",
+      "placeholder": "public/assets/placeholders/scoring-breakdown.svg",
+      "storyboardSections": [],
+      "status": "ready",
+      "route": null,
+      "viewport": null,
+      "requiredState": "render from DIAGRAM_DATA JSON",
+      "redactions": [],
+      "caption": "scoring-breakdown",
+      "annotations": [],
+      "dataFile": "DIAGRAM_DATA/scoring-breakdown.json"
+    },
+    {
+      "id": "diagram-deterministic-plus-llm",
+      "type": "diagram",
+      "filename": "deterministic-plus-llm.json",
+      "folder": "DIAGRAM_DATA",
+      "placeholder": "public/assets/placeholders/deterministic-plus-llm.svg",
+      "storyboardSections": [],
+      "status": "ready",
+      "route": null,
+      "viewport": null,
+      "requiredState": "render from DIAGRAM_DATA JSON",
+      "redactions": [],
+      "caption": "deterministic-plus-llm",
+      "annotations": [],
+      "dataFile": "DIAGRAM_DATA/deterministic-plus-llm.json"
+    },
+    {
+      "id": "diagram-evidence-to-resume",
+      "type": "diagram",
+      "filename": "evidence-to-resume.json",
+      "folder": "DIAGRAM_DATA",
+      "placeholder": "public/assets/placeholders/evidence-to-resume.svg",
+      "storyboardSections": [],
+      "status": "ready",
+      "route": null,
+      "viewport": null,
+      "requiredState": "render from DIAGRAM_DATA JSON",
+      "redactions": [],
+      "caption": "evidence-to-resume",
+      "annotations": [],
+      "dataFile": "DIAGRAM_DATA/evidence-to-resume.json"
+    },
+    {
+      "id": "diagram-project-ranking",
+      "type": "diagram",
+      "filename": "project-ranking.json",
+      "folder": "DIAGRAM_DATA",
+      "placeholder": "public/assets/placeholders/project-ranking.svg",
+      "storyboardSections": [],
+      "status": "ready",
+      "route": null,
+      "viewport": null,
+      "requiredState": "render from DIAGRAM_DATA JSON",
+      "redactions": [],
+      "caption": "project-ranking",
+      "annotations": [],
+      "dataFile": "DIAGRAM_DATA/project-ranking.json"
+    },
+    {
+      "id": "diagram-experience-ranking",
+      "type": "diagram",
+      "filename": "experience-ranking.json",
+      "folder": "DIAGRAM_DATA",
+      "placeholder": "public/assets/placeholders/experience-ranking.svg",
+      "storyboardSections": [],
+      "status": "ready",
+      "route": null,
+      "viewport": null,
+      "requiredState": "render from DIAGRAM_DATA JSON",
+      "redactions": [],
+      "caption": "experience-ranking",
+      "annotations": [],
+      "dataFile": "DIAGRAM_DATA/experience-ranking.json"
+    },
+    {
+      "id": "diagram-resume-composition",
+      "type": "diagram",
+      "filename": "resume-composition.json",
+      "folder": "DIAGRAM_DATA",
+      "placeholder": "public/assets/placeholders/resume-composition.svg",
+      "storyboardSections": [],
+      "status": "ready",
+      "route": null,
+      "viewport": null,
+      "requiredState": "render from DIAGRAM_DATA JSON",
+      "redactions": [],
+      "caption": "resume-composition",
+      "annotations": [],
+      "dataFile": "DIAGRAM_DATA/resume-composition.json"
+    },
+    {
+      "id": "diagram-resume-version-lineage",
+      "type": "diagram",
+      "filename": "resume-version-lineage.json",
+      "folder": "DIAGRAM_DATA",
+      "placeholder": "public/assets/placeholders/resume-version-lineage.svg",
+      "storyboardSections": [],
+      "status": "ready",
+      "route": null,
+      "viewport": null,
+      "requiredState": "render from DIAGRAM_DATA JSON",
+      "redactions": [],
+      "caption": "resume-version-lineage",
+      "annotations": [],
+      "dataFile": "DIAGRAM_DATA/resume-version-lineage.json"
+    },
+    {
+      "id": "diagram-application-lifecycle",
+      "type": "diagram",
+      "filename": "application-lifecycle.json",
+      "folder": "DIAGRAM_DATA",
+      "placeholder": "public/assets/placeholders/application-lifecycle.svg",
+      "storyboardSections": [],
+      "status": "ready",
+      "route": null,
+      "viewport": null,
+      "requiredState": "render from DIAGRAM_DATA JSON",
+      "redactions": [],
+      "caption": "application-lifecycle",
+      "annotations": [],
+      "dataFile": "DIAGRAM_DATA/application-lifecycle.json"
+    },
+    {
+      "id": "diagram-system-architecture",
+      "type": "diagram",
+      "filename": "system-architecture.json",
+      "folder": "DIAGRAM_DATA",
+      "placeholder": "public/assets/placeholders/system-architecture.svg",
+      "storyboardSections": [],
+      "status": "ready",
+      "route": null,
+      "viewport": null,
+      "requiredState": "render from DIAGRAM_DATA JSON",
+      "redactions": [],
+      "caption": "system-architecture",
+      "annotations": [],
+      "dataFile": "DIAGRAM_DATA/system-architecture.json"
+    },
+    {
+      "id": "diagram-development-timeline",
+      "type": "diagram",
+      "filename": "development-timeline.json",
+      "folder": "DIAGRAM_DATA",
+      "placeholder": "public/assets/placeholders/development-timeline.svg",
+      "storyboardSections": [],
+      "status": "ready",
+      "route": null,
+      "viewport": null,
+      "requiredState": "render from DIAGRAM_DATA JSON",
+      "redactions": [],
+      "caption": "development-timeline",
+      "annotations": [],
+      "dataFile": "DIAGRAM_DATA/development-timeline.json"
+    }
+  ]
+}

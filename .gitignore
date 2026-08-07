@@ -47,3 +47,10 @@ next-env.d.ts
 
 # generated resumes
 /tmp/
+
+# case-study Vite app
+/case-study/app/node_modules/
+/case-study/app/dist/
+/case-study/app/.vite/
+/case-study/capture/raw/
+/case-study/capture/tmp/

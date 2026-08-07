@@ -1,0 +1,48 @@
+{
+  "id": "experience-ranking",
+  "nodes": [
+    {
+      "id": "theme",
+      "label": "themeHits * 0.35"
+    },
+    {
+      "id": "jd",
+      "label": "jdHits * 0.25"
+    },
+    {
+      "id": "rec",
+      "label": "recency * 0.25"
+    },
+    {
+      "id": "sort",
+      "label": "1/(sortOrder+1) * 0.15"
+    },
+    {
+      "id": "rel",
+      "label": "relevanceScore * 0.5"
+    }
+  ],
+  "edges": [],
+  "sections": [
+    "act7"
+  ],
+  "source": "CAREEROS_PROJECT_HISTORIAN.md Appendix D",
+  "labels": [
+    "themeHits * 0.35",
+    "jdHits * 0.25",
+    "recency * 0.25",
+    "1/(sortOrder+1) * 0.15",
+    "relevanceScore * 0.5"
+  ],
+  "categories": [],
+  "mobileOrder": [
+    "theme",
+    "jd",
+    "rec",
+    "sort",
+    "rel"
+  ],
+  "sourceReferences": [
+    "CAREEROS_PROJECT_HISTORIAN.md Appendix D"
+  ]
+}

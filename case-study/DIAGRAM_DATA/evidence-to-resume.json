@@ -1,0 +1,86 @@
+{
+  "id": "evidence-to-resume",
+  "nodes": [
+    {
+      "id": "inv",
+      "label": "Inventory"
+    },
+    {
+      "id": "rank",
+      "label": "Rank projects/exp"
+    },
+    {
+      "id": "compose",
+      "label": "Compose V3"
+    },
+    {
+      "id": "val",
+      "label": "Validate (corpus excludes CV)"
+    },
+    {
+      "id": "comp",
+      "label": "ComposeDocument V4"
+    },
+    {
+      "id": "theme",
+      "label": "Theme"
+    },
+    {
+      "id": "export",
+      "label": "DOCX/PDF"
+    }
+  ],
+  "edges": [
+    {
+      "from": "inv",
+      "to": "rank"
+    },
+    {
+      "from": "rank",
+      "to": "compose"
+    },
+    {
+      "from": "compose",
+      "to": "val"
+    },
+    {
+      "from": "val",
+      "to": "comp"
+    },
+    {
+      "from": "comp",
+      "to": "theme"
+    },
+    {
+      "from": "theme",
+      "to": "export"
+    }
+  ],
+  "sections": [
+    "§32",
+    "§47"
+  ],
+  "source": "src/lib/resume/v3/",
+  "labels": [
+    "Inventory",
+    "Rank projects/exp",
+    "Compose V3",
+    "Validate (corpus excludes CV)",
+    "ComposeDocument V4",
+    "Theme",
+    "DOCX/PDF"
+  ],
+  "categories": [],
+  "mobileOrder": [
+    "inv",
+    "rank",
+    "compose",
+    "val",
+    "comp",
+    "theme",
+    "export"
+  ],
+  "sourceReferences": [
+    "src/lib/resume/v3/"
+  ]
+}

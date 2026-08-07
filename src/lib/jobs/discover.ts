@@ -5,6 +5,7 @@ import { fetchAdzunaIreland, fetchArbeitnow, fetchRemotiveDesign } from "@/lib/j
 import { checkBoardPresence, presenceSearchConfigured } from "@/lib/jobs/board-presence";
 import { fetchIrelandWatchlist } from "@/lib/jobs/ireland-watchlist";
 import { parseJsonArray } from "@/lib/utils";
+import { getPrimaryUser } from "@/lib/auth/user";
 
 const GREENHOUSE_BOARDS = [
   "intercom",
@@ -212,12 +213,12 @@ async function fetchLever(company: string) {
 }
 
 export async function runJobDiscovery(options?: { target?: number }): Promise<DiscoverResult> {
-  const user = await prisma.user.findFirst({ include: { settings: true } });
+  const user = await getPrimaryUser();
   if (!user?.settings) throw new Error("Seed the database first");
 
   const target = options?.target ?? user.settings.dailyBatchTarget ?? 25;
   const existingUrls = new Set(
-    (await prisma.job.findMany({ select: { url: true } }))
+    (await prisma.job.findMany({ where: { userId: user.id }, select: { url: true } }))
       .map((j) => j.url)
       .filter((u): u is string => Boolean(u)),
   );

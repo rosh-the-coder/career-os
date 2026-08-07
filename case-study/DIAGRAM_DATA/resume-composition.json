@@ -1,0 +1,60 @@
+{
+  "id": "resume-composition",
+  "nodes": [
+    {
+      "id": "v2",
+      "label": "v2 templates"
+    },
+    {
+      "id": "v3",
+      "label": "v3 inventory compose"
+    },
+    {
+      "id": "v4",
+      "label": "v4 composition/themes/critic"
+    },
+    {
+      "id": "flag",
+      "label": "RESUME_ENGINE_VERSION"
+    }
+  ],
+  "edges": [
+    {
+      "from": "flag",
+      "to": "v2"
+    },
+    {
+      "from": "flag",
+      "to": "v3"
+    },
+    {
+      "from": "flag",
+      "to": "v4"
+    },
+    {
+      "from": "v3",
+      "to": "v4",
+      "label": "content → layout"
+    }
+  ],
+  "sections": [
+    "§48"
+  ],
+  "source": "src/lib/resume/service.ts",
+  "labels": [
+    "v2 templates",
+    "v3 inventory compose",
+    "v4 composition/themes/critic",
+    "RESUME_ENGINE_VERSION"
+  ],
+  "categories": [],
+  "mobileOrder": [
+    "v2",
+    "v3",
+    "v4",
+    "flag"
+  ],
+  "sourceReferences": [
+    "src/lib/resume/service.ts"
+  ]
+}

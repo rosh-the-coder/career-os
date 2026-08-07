@@ -1,0 +1,96 @@
+{
+  "id": "daily-job-search-loop",
+  "nodes": [
+    {
+      "id": "time",
+      "label": "Time spent"
+    },
+    {
+      "id": "find",
+      "label": "Finding"
+    },
+    {
+      "id": "read",
+      "label": "Reading"
+    },
+    {
+      "id": "score",
+      "label": "Scoring"
+    },
+    {
+      "id": "resume",
+      "label": "Resume"
+    },
+    {
+      "id": "cover",
+      "label": "Cover Letter"
+    },
+    {
+      "id": "track",
+      "label": "Tracking"
+    },
+    {
+      "id": "repeat",
+      "label": "Repeat"
+    }
+  ],
+  "edges": [
+    {
+      "from": "time",
+      "to": "find"
+    },
+    {
+      "from": "find",
+      "to": "read"
+    },
+    {
+      "from": "read",
+      "to": "score"
+    },
+    {
+      "from": "score",
+      "to": "resume"
+    },
+    {
+      "from": "resume",
+      "to": "cover"
+    },
+    {
+      "from": "cover",
+      "to": "track"
+    },
+    {
+      "from": "track",
+      "to": "repeat"
+    },
+    {
+      "from": "repeat",
+      "to": "time"
+    }
+  ],
+  "sections": [
+    "§10"
+  ],
+  "labels": [
+    "Time spent",
+    "Finding",
+    "Reading",
+    "Scoring",
+    "Resume",
+    "Cover Letter",
+    "Tracking",
+    "Repeat"
+  ],
+  "categories": [],
+  "mobileOrder": [
+    "time",
+    "find",
+    "read",
+    "score",
+    "resume",
+    "cover",
+    "track",
+    "repeat"
+  ],
+  "sourceReferences": []
+}

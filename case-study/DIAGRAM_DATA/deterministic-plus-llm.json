@@ -1,0 +1,82 @@
+{
+  "id": "deterministic-plus-llm",
+  "nodes": [
+    {
+      "id": "job",
+      "label": "Job + Settings"
+    },
+    {
+      "id": "hard",
+      "label": "Hard filters"
+    },
+    {
+      "id": "heur",
+      "label": "Heuristic scoreJob"
+    },
+    {
+      "id": "llm",
+      "label": "Optional LLM judge"
+    },
+    {
+      "id": "merge",
+      "label": "mergeHeuristicWithJudge"
+    },
+    {
+      "id": "out",
+      "label": "JobScore"
+    }
+  ],
+  "edges": [
+    {
+      "from": "job",
+      "to": "hard"
+    },
+    {
+      "from": "hard",
+      "to": "heur"
+    },
+    {
+      "from": "heur",
+      "to": "llm",
+      "optional": true
+    },
+    {
+      "from": "heur",
+      "to": "merge"
+    },
+    {
+      "from": "llm",
+      "to": "merge"
+    },
+    {
+      "from": "merge",
+      "to": "out",
+      "note": "eligibility floats locked"
+    }
+  ],
+  "sections": [
+    "§30",
+    "§46"
+  ],
+  "source": "src/lib/scoring/llm-judge.ts",
+  "labels": [
+    "Job + Settings",
+    "Hard filters",
+    "Heuristic scoreJob",
+    "Optional LLM judge",
+    "mergeHeuristicWithJudge",
+    "JobScore"
+  ],
+  "categories": [],
+  "mobileOrder": [
+    "job",
+    "hard",
+    "heur",
+    "llm",
+    "merge",
+    "out"
+  ],
+  "sourceReferences": [
+    "src/lib/scoring/llm-judge.ts"
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "id": "human-vs-ai",
+  "nodes": [
+    {
+      "id": "eligibility",
+      "label": "Eligibility hard reject",
+      "owner": "deterministic"
+    },
+    {
+      "id": "yoe",
+      "label": "YOE hard reject",
+      "owner": "deterministic"
+    },
+    {
+      "id": "claims",
+      "label": "Claim / metric approval",
+      "owner": "human+rules"
+    },
+    {
+      "id": "titles",
+      "label": "Official titles",
+      "owner": "deterministic"
+    },
+    {
+      "id": "submit",
+      "label": "Application submit",
+      "owner": "human"
+    },
+    {
+      "id": "score_narrative",
+      "label": "Fit narrative",
+      "owner": "optional-ai"
+    },
+    {
+      "id": "ats",
+      "label": "ATS wording suggest",
+      "owner": "optional-ai"
+    },
+    {
+      "id": "critic",
+      "label": "Resume critic",
+      "owner": "optional-ai"
+    }
+  ],
+  "edges": [],
+  "sections": [
+    "§13",
+    "§30"
+  ],
+  "source": "docs/project/architecture/AI_USAGE.md",
+  "labels": [
+    "Eligibility hard reject",
+    "YOE hard reject",
+    "Claim / metric approval",
+    "Official titles",
+    "Application submit",
+    "Fit narrative",
+    "ATS wording suggest",
+    "Resume critic"
+  ],
+  "categories": [],
+  "mobileOrder": [
+    "eligibility",
+    "yoe",
+    "claims",
+    "titles",
+    "submit",
+    "score_narrative",
+    "ats",
+    "critic"
+  ],
+  "sourceReferences": [
+    "docs/project/architecture/AI_USAGE.md"
+  ]
+}

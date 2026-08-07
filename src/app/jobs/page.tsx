@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db/prisma";
 import { PageHeader, Panel, ScoreBadge, StatusPill } from "@/components/ui";
+import { getPrimaryUser } from "@/lib/auth/user";
 
 export const dynamic = "force-dynamic";
 
 export default async function JobsPage() {
+  const user = await getPrimaryUser();
   const jobs = await prisma.job.findMany({
+    where: { userId: user.id },
     include: { score: { include: { profile: true } } },
     orderBy: { collectedAt: "desc" },
   });

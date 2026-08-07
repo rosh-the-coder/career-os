@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/db/prisma";
 import { PageHeader, Panel, ScoreBadge, StatusPill } from "@/components/ui";
 import { DashboardActions } from "@/components/dashboard-actions";
+import { getPrimaryUser } from "@/lib/auth/user";
 
 export const dynamic = "force-dynamic";
 
@@ -20,19 +21,23 @@ function dedupeByUrl<T extends { id: string; url: string | null; score: { totalS
 }
 
 export default async function DashboardPage() {
-  const settings = await prisma.settings.findFirst();
+  const user = await getPrimaryUser();
+  const settings = user.settings;
   const batchTarget = settings?.dailyBatchTarget ?? 25;
+  const userId = user.id;
 
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
 
   const [allJobs, euJobsRaw, applicationCount, estimateCount] = await Promise.all([
     prisma.job.findMany({
+      where: { userId },
       include: { score: true },
       orderBy: { collectedAt: "desc" },
     }),
     prisma.job.findMany({
       where: {
+        userId,
         listingCategory: "eu_sponsorship",
         NOT: { status: "rejected" },
       },
@@ -40,8 +45,13 @@ export default async function DashboardPage() {
       orderBy: { collectedAt: "desc" },
       take: 30,
     }),
-    prisma.application.count(),
-    prisma.metric.count({ where: { OR: [{ isEstimate: true }, { needsReview: true }] } }),
+    prisma.application.count({ where: { userId } }),
+    prisma.metric.count({
+      where: {
+        evidence: { userId },
+        OR: [{ isEstimate: true }, { needsReview: true }],
+      },
+    }),
   ]);
 
   const uniqueJobs = dedupeByUrl(allJobs);

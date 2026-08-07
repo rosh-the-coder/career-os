@@ -7,11 +7,14 @@ import { isResumeContentV3 } from "@/lib/resume/v3/adapter";
 import type { ResumeContentV3 } from "@/lib/resume/v3/types";
 import type { CompositionDocument } from "@/lib/resume-studio/composition/types";
 import type { ResumeCritique } from "@/lib/resume-studio/critic/run-resume-critic";
+import { getPrimaryUser } from "@/lib/auth/user";
 
 export const dynamic = "force-dynamic";
 
 export default async function ResumeStudioPage() {
+  const user = await getPrimaryUser();
   const versions = await prisma.resumeVersion.findMany({
+    where: { userId: user.id },
     include: { job: true, profile: true, parentVersion: true },
     orderBy: { createdAt: "desc" },
   });

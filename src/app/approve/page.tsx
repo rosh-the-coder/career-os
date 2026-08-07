@@ -3,12 +3,15 @@ import { ApproveQueueClient } from "@/components/approve-queue";
 import { prisma } from "@/lib/db/prisma";
 import { computeParseConfidence, isLlmScored } from "@/lib/jobs/jd-meta";
 import { parseJsonArray } from "@/lib/utils";
+import { getPrimaryUser } from "@/lib/auth/user";
 
 export const dynamic = "force-dynamic";
 
 export default async function ApprovePage() {
+  const user = await getPrimaryUser();
   const jobs = await prisma.job.findMany({
     where: {
+      userId: user.id,
       status: { in: ["scored", "saved", "materials_ready", "new"] },
       NOT: { status: "rejected" },
       score: { isNot: null },

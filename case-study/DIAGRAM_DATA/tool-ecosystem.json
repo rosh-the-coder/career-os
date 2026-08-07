@@ -1,0 +1,123 @@
+{
+  "id": "tool-ecosystem",
+  "nodes": [
+    {
+      "id": "center",
+      "label": "Workflow (empty)",
+      "category": "core"
+    },
+    {
+      "id": "resumeio",
+      "label": "Resume.io",
+      "category": "generate",
+      "tooltip": "Writes documents"
+    },
+    {
+      "id": "chatgpt",
+      "label": "ChatGPT",
+      "category": "chat",
+      "tooltip": "Generates prose"
+    },
+    {
+      "id": "huntr",
+      "label": "Huntr",
+      "category": "track",
+      "tooltip": "Tracks applications"
+    },
+    {
+      "id": "teal",
+      "label": "Teal",
+      "category": "track",
+      "tooltip": "Career tracker"
+    },
+    {
+      "id": "simplify",
+      "label": "Simplify",
+      "category": "apply",
+      "tooltip": "Apply assist"
+    },
+    {
+      "id": "linkedin",
+      "label": "LinkedIn",
+      "category": "discover",
+      "tooltip": "Hosts jobs / network"
+    },
+    {
+      "id": "indeed",
+      "label": "Indeed",
+      "category": "discover",
+      "tooltip": "Job board"
+    }
+  ],
+  "edges": [
+    {
+      "from": "resumeio",
+      "to": "center",
+      "kind": "orbit"
+    },
+    {
+      "from": "chatgpt",
+      "to": "center",
+      "kind": "orbit"
+    },
+    {
+      "from": "huntr",
+      "to": "center",
+      "kind": "orbit"
+    },
+    {
+      "from": "teal",
+      "to": "center",
+      "kind": "orbit"
+    },
+    {
+      "from": "simplify",
+      "to": "center",
+      "kind": "orbit"
+    },
+    {
+      "from": "linkedin",
+      "to": "center",
+      "kind": "orbit"
+    },
+    {
+      "from": "indeed",
+      "to": "center",
+      "kind": "orbit"
+    }
+  ],
+  "sections": [
+    "§16",
+    "§17",
+    "§18"
+  ],
+  "labels": [
+    "Workflow (empty)",
+    "Resume.io",
+    "ChatGPT",
+    "Huntr",
+    "Teal",
+    "Simplify",
+    "LinkedIn",
+    "Indeed"
+  ],
+  "categories": [
+    "core",
+    "generate",
+    "chat",
+    "track",
+    "apply",
+    "discover"
+  ],
+  "mobileOrder": [
+    "center",
+    "resumeio",
+    "chatgpt",
+    "huntr",
+    "teal",
+    "simplify",
+    "linkedin",
+    "indeed"
+  ],
+  "sourceReferences": []
+}

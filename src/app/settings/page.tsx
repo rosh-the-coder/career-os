@@ -1,12 +1,12 @@
 import { updateSettingsAction } from "@/app/actions";
 import { PageHeader, Panel } from "@/components/ui";
-import { prisma } from "@/lib/db/prisma";
+import { getPrimaryUser } from "@/lib/auth/user";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const user = await prisma.user.findFirst({ include: { settings: true } });
-  const s = user?.settings;
+  const user = await getPrimaryUser();
+  const s = user.settings;
 
   return (
     <div>
