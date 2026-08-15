@@ -10,7 +10,7 @@
 
 | Provider | Role | Config |
 |---|---|---|
-| Groq | Primary LLM judge / ATS suggest / critic (when keys present) | `GROQ_API_KEY`, `GROQ_SCORE_MODEL` (default `llama-3.1-8b-instant`) |
+| Groq | Primary LLM judge / ATS suggest / critic (when keys present) | `GROQ_API_KEY`, `GROQ_SCORE_MODEL` (default `openai/gpt-oss-20b`) |
 | Google Gemini | Fallback judge; optional job extract; optional polish | `GEMINI_API_KEY`, `GEMINI_SCORE_MODEL` (e.g. `gemini-2.0-flash`) |
 | Deterministic heuristics | Always-available core | N/A |
 | Kill switch | Force heuristic scoring | `SCORE_LLM_DISABLED=true` |

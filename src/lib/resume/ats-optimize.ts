@@ -313,7 +313,7 @@ Rules:
 async function callGroqJson(prompt: string): Promise<{ text: string; model: string } | null> {
   const key = process.env.GROQ_API_KEY?.trim();
   if (!key) return null;
-  const model = process.env.GROQ_SCORE_MODEL?.trim() || "llama-3.1-8b-instant";
+  const model = process.env.GROQ_SCORE_MODEL?.trim() || "openai/gpt-oss-20b";
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {

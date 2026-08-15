@@ -54,7 +54,7 @@ describe("llm judge merge", () => {
         recommendedProjects: ["Dublin Gold Testing B2B Growth Engine"],
         evidenceUsed: ["Irish AI Creative"],
       },
-      meta: { provider: "groq", model: "llama-3.1-8b-instant", used: true },
+      meta: { provider: "groq", model: "openai/gpt-oss-20b", used: true },
     };
     const merged = mergeHeuristicWithJudge(heuristic, judge);
     expect(merged.totalScore).toBe(52);

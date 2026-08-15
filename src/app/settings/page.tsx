@@ -133,8 +133,8 @@ export default async function SettingsPage() {
               </a>{" "}
               → add <code className="text-ink">GROQ_API_KEY</code> to <code className="text-ink">.env</code>{" "}
               then restart. Optional:{" "}
-              <code className="text-ink">GROQ_SCORE_MODEL=llama-3.3-70b-versatile</code> for stronger
-              judging (lower free daily cap).
+              <code className="text-ink">GROQ_SCORE_MODEL=openai/gpt-oss-120b</code> for stronger
+              judging (or <code className="text-ink">qwen/qwen3.6-27b</code>).
             </li>
             <li>
               Free Adzuna keys:{" "}

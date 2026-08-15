@@ -94,7 +94,7 @@ export function heuristicCritique(doc: CompositionDocument): ResumeCritique {
 async function callGroq(prompt: string): Promise<{ json: unknown; model: string } | null> {
   const key = process.env.GROQ_API_KEY;
   if (!key) return null;
-  const model = process.env.GROQ_SCORE_MODEL || "llama-3.1-8b-instant";
+  const model = process.env.GROQ_SCORE_MODEL || "openai/gpt-oss-20b";
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },

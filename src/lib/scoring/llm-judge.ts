@@ -199,8 +199,8 @@ function coerceJudge(
 async function callGroq(prompt: string): Promise<{ text: string; model: string } | null> {
   const key = process.env.GROQ_API_KEY?.trim();
   if (!key) return null;
-  // 8B instant = highest free daily headroom; override with GROQ_SCORE_MODEL for quality
-  const model = process.env.GROQ_SCORE_MODEL?.trim() || "llama-3.1-8b-instant";
+  // Default: Groq replacement for deprecated llama-3.1-8b-instant (shutdown 2026-08-16)
+  const model = process.env.GROQ_SCORE_MODEL?.trim() || "openai/gpt-oss-20b";
   const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
     method: "POST",
     headers: {

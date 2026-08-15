@@ -29,7 +29,7 @@ const FORCE = {
   RESUME_DETERMINISTIC_ONLY: "true",
   DEV_BYPASS_AUTH: "false",
   NEXT_PUBLIC_DEV_BYPASS_AUTH: "false",
-  GROQ_SCORE_MODEL: process.env.GROQ_SCORE_MODEL || "llama-3.1-8b-instant",
+  GROQ_SCORE_MODEL: process.env.GROQ_SCORE_MODEL || "openai/gpt-oss-20b",
 } as const;
 
 function loadDotEnv(path: string): Record<string, string> {
@@ -54,13 +54,19 @@ function loadDotEnv(path: string): Record<string, string> {
 }
 
 function setEnv(name: string, value: string, env: "production" | "preview") {
-  execFileSync("vercel", ["env", "rm", name, env, "--yes"], {
-    stdio: ["ignore", "ignore", "ignore"],
-  });
-  // vercel env add reads value from stdin
-  execFileSync("vercel", ["env", "add", name, env, "--force"], {
+  const vercelCmd = process.platform === "win32" ? "vercel.cmd" : "vercel";
+  try {
+    execFileSync(vercelCmd, ["env", "rm", name, env, "--yes"], {
+      stdio: ["ignore", "ignore", "ignore"],
+      shell: process.platform === "win32",
+    });
+  } catch {
+    /* key may not exist yet */
+  }
+  execFileSync(vercelCmd, ["env", "add", name, env, "--force"], {
     input: value,
     stdio: ["pipe", "inherit", "inherit"],
+    shell: process.platform === "win32",
   });
   console.log(`  set ${name} (${env})`);
 }
