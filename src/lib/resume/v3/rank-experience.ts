@@ -35,19 +35,20 @@ export function resolveExperienceTitle(
 
   let companyBlurb = exp.companyContext ?? undefined;
   if (companyBlurb) {
-    companyBlurb = companyBlurb
+    let cleaned = companyBlurb
       .replace(/\s*\([^)]*layoff[^)]*\)\.?/gi, ".")
       .replace(/\s*ended[^.]*(layoff|laid off)[^.]*\.?/gi, ".")
       .replace(/\s{2,}/g, " ")
       .replace(/\.\s*\./g, ".")
       .trim();
-    if (/without inventing|unverified metrics/i.test(companyBlurb)) {
-      companyBlurb = undefined;
+    if (/without inventing|unverified metrics/i.test(cleaned)) {
+      cleaned = "";
     }
     // Contribution-style blurbs belong in bullets, not company summary
-    if (/^(contributed|expanded|built|designed|produced|grew|increased)\b/i.test(companyBlurb)) {
-      companyBlurb = undefined;
+    if (/^(contributed|expanded|built|designed|produced|grew|increased)\b/i.test(cleaned)) {
+      cleaned = "";
     }
+    companyBlurb = cleaned || undefined;
   }
 
   return {
