@@ -1,11 +1,19 @@
 import { prisma } from "@/lib/db/prisma";
 import { importAndScoreJob } from "@/lib/jobs/service";
 import { inferYearsRequired } from "@/lib/scoring/hard-filters";
-import { fetchAdzunaIreland, fetchArbeitnow, fetchRemotiveDesign } from "@/lib/jobs/aggregators";
+import { fetchAdzunaJobs, fetchArbeitnow, fetchRemotiveDesign } from "@/lib/jobs/aggregators";
 import { checkBoardPresence, presenceSearchConfigured } from "@/lib/jobs/board-presence";
 import { fetchIrelandWatchlist } from "@/lib/jobs/ireland-watchlist";
 import { parseJsonArray } from "@/lib/utils";
 import { getPrimaryUser } from "@/lib/auth/user";
+import { resolveUserKeys } from "@/lib/byok/keys";
+import {
+  buildTitleHintRegex,
+  buildExcludeTitleRegex,
+  isPrimaryMarketHit,
+  marketTokens,
+  roleQueriesFromSettings,
+} from "@/lib/jobs/discover-prefs";
 
 const GREENHOUSE_BOARDS = [
   "intercom",
@@ -85,9 +93,6 @@ const ASHBY_BOARDS = [
   "supabase",
 ];
 
-const TITLE_HINTS =
-  /ux[/ ]?ui|ui[/ ]?ux|ux engineer|ui engineer|ux designer|ui designer|product designer|design engineer|frontend|front[- ]?end|product engineer|creative technologist|prototyp|interaction designer|applied ai|design systems|visual designer|digital designer|web designer|experience designer|service designer/i;
-
 const SKIP_TITLE =
   /\b(staff|principal|director|head of|vp\b|vice president|chief|distinguished|fellow)\b/i;
 
@@ -105,22 +110,9 @@ function stripHtml(html: string): string {
   return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function isIrelandCore(loc: string, content: string): boolean {
+function isEuSponsorship(loc: string, content: string, primaryTokens: string[]): boolean {
   const blob = `${loc} ${content}`.toLowerCase();
-  if (/\b(us only|usa only|united states only|uk only|london only|must be .*us work|green card)\b/.test(blob)) {
-    if (!/\bireland\b|\bdublin\b/.test(blob)) return false;
-  }
-  // Prefer explicit Ireland/Dublin; allow EU/remote only if Ireland also appears
-  if (/\bireland\b|\bdublin\b|\bcork\b|\bgalway\b/.test(blob)) return true;
-  if (/\bremote\b/.test(blob) && /\b(emea|europe|eu\b)\b/.test(blob) && !/\b(us|usa|united states)\b/.test(blob)) {
-    return true; // EMEA remote — keep in Ireland batch for review
-  }
-  return false;
-}
-
-function isEuSponsorship(loc: string, content: string): boolean {
-  const blob = `${loc} ${content}`.toLowerCase();
-  if (/\bireland\b|\bdublin\b/.test(blob)) return false;
+  if (primaryTokens.some((t) => t.length >= 3 && blob.includes(t))) return false;
   const eu =
     /\b(germany|berlin|netherlands|amsterdam|france|paris|spain|madrid|portugal|lisbon|belgium|brussels|sweden|stockholm|denmark|copenhagen|finland|austria|vienna|poland|warsaw|italy|milan|eu[- ]wide|europe|emea)\b/.test(
       blob,
@@ -179,11 +171,16 @@ async function fetchAshby(board: string) {
   return data.jobs ?? [];
 }
 
-function shouldSkipCandidate(title: string, description: string): boolean {
+function shouldSkipCandidate(
+  title: string,
+  description: string,
+  titleHints: RegExp,
+  excludeTitles: RegExp | null,
+): boolean {
   if (SKIP_TITLE.test(title)) return true;
-  if (!TITLE_HINTS.test(title)) return true;
+  if (excludeTitles?.test(title)) return true;
+  if (!titleHints.test(title)) return true;
   const years = inferYearsRequired(description);
-  // Hard skip extreme experience asks; Senior + 6y is usually a poor fit for mid band
   if (years != null && years >= 8) return true;
   if (years != null && years >= 6 && /\bsenior\b/i.test(title)) return true;
   return false;
@@ -216,6 +213,12 @@ export async function runJobDiscovery(options?: { target?: number }): Promise<Di
   const user = await getPrimaryUser();
   if (!user?.settings) throw new Error("Seed the database first");
 
+  const titleHints = buildTitleHintRegex(user.settings.targetRolesText);
+  const excludeTitles = buildExcludeTitleRegex(user.settings.excludedRolesText);
+  const tokens = marketTokens(user.settings);
+  const roleQueries = roleQueriesFromSettings(user.settings.targetRolesText);
+  const keys = await resolveUserKeys(user.id, { isOperator: user.isOperator });
+
   const target = options?.target ?? user.settings.dailyBatchTarget ?? 25;
   const existingUrls = new Set(
     (await prisma.job.findMany({ where: { userId: user.id }, select: { url: true } }))
@@ -246,7 +249,7 @@ export async function runJobDiscovery(options?: { target?: number }): Promise<Di
       const jobs = await fetchGreenhouse(board);
       for (const job of jobs) {
         const content = stripHtml(job.content ?? "");
-        if (shouldSkipCandidate(job.title, `${job.title}\n${content}`)) {
+        if (shouldSkipCandidate(job.title, `${job.title}\n${content}`, titleHints, excludeTitles)) {
           skippedFilters += 1;
           continue;
         }
@@ -274,7 +277,7 @@ export async function runJobDiscovery(options?: { target?: number }): Promise<Di
       const jobs = await fetchLever(company);
       for (const job of jobs) {
         const content = job.descriptionPlain ?? stripHtml(job.description ?? "");
-        if (shouldSkipCandidate(job.text, `${job.text}\n${content}`)) {
+        if (shouldSkipCandidate(job.text, `${job.text}\n${content}`, titleHints, excludeTitles)) {
           skippedFilters += 1;
           continue;
         }
@@ -302,7 +305,7 @@ export async function runJobDiscovery(options?: { target?: number }): Promise<Di
       const jobs = await fetchAshby(board);
       for (const job of jobs) {
         const content = job.descriptionPlain ?? stripHtml(job.descriptionHtml ?? "");
-        if (shouldSkipCandidate(job.title, `${job.title}\n${content}`)) {
+        if (shouldSkipCandidate(job.title, `${job.title}\n${content}`, titleHints, excludeTitles)) {
           skippedFilters += 1;
           continue;
         }
@@ -325,16 +328,23 @@ export async function runJobDiscovery(options?: { target?: number }): Promise<Di
     }
   }
 
-  // Aggregators: jobs that often also appear on Indeed/Glassdoor (without scraping those sites)
   try {
-    const [adzuna, remotive, arbeitnow, watchlist] = await Promise.all([
-      fetchAdzunaIreland(["UX Designer", "UI Designer", "Product Designer", "UX Engineer", "Design Engineer"]),
+    const adzuna = keys.hasAdzuna
+      ? await fetchAdzunaJobs(roleQueries, {
+          appId: keys.adzunaAppId!,
+          appKey: keys.adzunaAppKey!,
+          marketTokens: tokens,
+        })
+      : [];
+    const useIrelandWatchlist =
+      user.isOperator || tokens.some((t) => /ireland|dublin/.test(t));
+    const [remotive, arbeitnow, watchlist] = await Promise.all([
       fetchRemotiveDesign(),
       fetchArbeitnow(),
-      fetchIrelandWatchlist(),
+      useIrelandWatchlist ? fetchIrelandWatchlist() : Promise.resolve([]),
     ]);
     for (const job of [...watchlist, ...adzuna, ...remotive, ...arbeitnow]) {
-      if (shouldSkipCandidate(job.title, `${job.title}\n${job.description}`)) {
+      if (shouldSkipCandidate(job.title, `${job.title}\n${job.description}`, titleHints, excludeTitles)) {
         skippedFilters += 1;
         continue;
       }
@@ -348,33 +358,37 @@ export async function runJobDiscovery(options?: { target?: number }): Promise<Di
     errors += 1;
   }
 
-  // Prefer Ireland/Dublin + niche watchlist over generic senior board noise
   candidates.sort((a, b) => {
     const score = (c: Candidate) => {
       const t = `${c.title} ${c.location} ${c.description}`.toLowerCase();
       let s = 0;
       if (c.source.startsWith("watchlist:")) s += 8;
       if (c.source.startsWith("adzuna:")) s += 5;
-      if (/\bdublin\b/.test(t)) s += 5;
-      if (/\bireland\b/.test(t)) s += 4;
-      if (/\bux[/ ]?ui|ui[/ ]?ux|ux engineer|design engineer|product designer\b/.test(t)) s += 3;
+      for (const tok of tokens) {
+        if (tok.length >= 3 && t.includes(tok)) s += 4;
+      }
+      if (titleHints.test(c.title)) s += 3;
       if (/\bsenior\b/.test(c.title.toLowerCase())) s -= 3;
       return s;
     };
     return score(b) - score(a);
   });
 
+  const presenceKeys = {
+    brave: keys.brave,
+    serp: keys.serpapi,
+  };
+
   for (const c of candidates) {
     if (irelandCoreAdded >= target) break;
 
-    const eu = isEuSponsorship(c.location, c.description);
-    const ireland = isIrelandCore(c.location, c.description);
-    if (!eu && !ireland) {
+    const eu = isEuSponsorship(c.location, c.description, tokens);
+    const primary = isPrimaryMarketHit(c.location, c.description, tokens);
+    if (!eu && !primary) {
       skippedFilters += 1;
       continue;
     }
 
-    // Don't let EU fill the Ireland quota
     if (!eu && irelandCoreAdded >= target) continue;
 
     try {
@@ -388,13 +402,15 @@ export async function runJobDiscovery(options?: { target?: number }): Promise<Di
       });
       existingUrls.add(c.url);
 
-      // Optional: verify role is indexed on LinkedIn/Indeed/Glassdoor via search API (not scraping)
-      if (presenceSearchConfigured() && saved.status !== "rejected") {
-        const presence = await checkBoardPresence({
-          title: c.title,
-          company: c.company,
-          location: c.location,
-        });
+      if (presenceSearchConfigured(presenceKeys) && saved.status !== "rejected") {
+        const presence = await checkBoardPresence(
+          {
+            title: c.title,
+            company: c.company,
+            location: c.location,
+          },
+          presenceKeys,
+        );
         if (presence.checked) {
           const prior = parseJsonArray<{ code: string; message: string; severity: string }>(
             saved.softFlagsJson ?? "[]",
@@ -419,7 +435,6 @@ export async function runJobDiscovery(options?: { target?: number }): Promise<Di
         euSponsorshipAdded += 1;
         samples.push({ title: c.title, company: c.company, score, category: "eu_sponsorship" });
       } else {
-        // Only count toward Ireland batch if not hard-rejected
         if (saved.status !== "rejected") irelandCoreAdded += 1;
         samples.push({ title: c.title, company: c.company, score, category: "ireland_core" });
       }

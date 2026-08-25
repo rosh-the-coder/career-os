@@ -1,8 +1,10 @@
 import { PROFILE_KEYS, type JobScoreResult, type ProfileKey, type ScoreBreakdown } from "@/lib/types";
 import type { ScoringContext } from "@/lib/scoring/score-job";
+import { chatJsonCompletion } from "@/lib/ai/chat";
+import type { ResolvedKeys } from "@/lib/byok/keys";
 
 export type LlmJudgeMeta = {
-  provider: "groq" | "gemini" | "none";
+  provider: "groq" | "gemini" | "openai" | "none";
   model: string;
   used: boolean;
   error?: string;
@@ -73,9 +75,22 @@ function buildCandidateBrief(ctx: ScoringContext): string {
     .map((p) => `- ${p.key}: ${p.name} — ${p.positioning.slice(0, 180)}`)
     .join("\n");
 
-  return `CANDIDATE: Roshan Najar, Dublin, Ireland.
-Work permission: Stamp 1G (can work full-time now; valid ~Sep 2027, renewable ~Sep 2028). Prefer Ireland/Dublin. Soft salary floor €40k.
-Target band: mid-level UX Engineer / Product Designer / Design Engineer / applied AI creative — NOT staff/principal/director, NOT 8+ YOE research/PhD ML tracks, NOT mechanical CAD.
+  const c = ctx.candidate;
+  const name = c?.name?.trim() || "Candidate";
+  const location = c?.location?.trim() || "Location not set";
+  const permission = c?.permission?.trim() || "Permission not set";
+  const valid = c?.permissionValidUntil?.trim();
+  const renewable = c?.permissionRenewableUntil?.trim();
+  const salary = c?.salaryFloorEur && c.salaryFloorEur > 0 ? `Soft salary floor €${c.salaryFloorEur}.` : "";
+  const positioning =
+    c?.positioning?.trim() ||
+    ctx.profiles.find((p) => p.key === ctx.defaultProfileKey)?.positioning?.slice(0, 220) ||
+    "Use profiles below; do not invent seniority.";
+  const workNow = c?.canWorkFullTimeNow === false ? "Cannot work full-time immediately." : "Can work full-time now (per profile).";
+
+  return `CANDIDATE: ${name}, ${location}.
+Work permission: ${permission}${valid ? ` (valid ~${valid}` : ""}${renewable ? `, renewable ~${renewable}` : ""}${valid ? ")" : ""}. ${workNow} ${salary}
+Target positioning: ${positioning}
 
 PROFILES (pick one key):
 ${profiles}
@@ -196,76 +211,17 @@ function coerceJudge(
   };
 }
 
-async function callGroq(prompt: string): Promise<{ text: string; model: string } | null> {
-  const key = process.env.GROQ_API_KEY?.trim();
-  if (!key) return null;
-  // Default: Groq replacement for deprecated llama-3.1-8b-instant (shutdown 2026-08-16)
-  const model = process.env.GROQ_SCORE_MODEL?.trim() || "openai/gpt-oss-20b";
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${key}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      temperature: 0.2,
-      response_format: { type: "json_object" },
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a rigorous job-fit scoring engine. Reply with JSON only. Never invent candidate experience.",
-        },
-        { role: "user", content: prompt },
-      ],
-    }),
-    signal: AbortSignal.timeout(45000),
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`Groq ${res.status}: ${body.slice(0, 200)}`);
-  }
-  const data = (await res.json()) as {
-    choices?: { message?: { content?: string } }[];
+async function emptyKeys(): Promise<ResolvedKeys> {
+  return {
+    preferredLlm: "none",
+    hasAnyLlm: false,
+    hasAdzuna: false,
   };
-  const text = data.choices?.[0]?.message?.content;
-  if (!text) throw new Error("Groq empty response");
-  return { text, model };
-}
-
-async function callGemini(prompt: string): Promise<{ text: string; model: string } | null> {
-  const key = process.env.GEMINI_API_KEY?.trim();
-  if (!key) return null;
-  const model = process.env.GEMINI_SCORE_MODEL?.trim() || "gemini-2.0-flash";
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.2,
-        responseMimeType: "application/json",
-      },
-    }),
-    signal: AbortSignal.timeout(45000),
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`Gemini ${res.status}: ${body.slice(0, 200)}`);
-  }
-  const data = (await res.json()) as {
-    candidates?: { content?: { parts?: { text?: string }[] } }[];
-  };
-  const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
-  if (!text) throw new Error("Gemini empty response");
-  return { text, model };
 }
 
 /**
- * LLM job-fit judge. Prefer Groq (best free throughput), then Gemini, else none.
- * Hard-filter eligibility is preserved from the heuristic result.
+ * LLM job-fit judge. Prefer OpenAI/Gemini (higher limits) then Groq.
+ * Keys come from ScoringContext.llmKeys (BYOK) — never silently use another user's env.
  */
 export async function runLlmJudge(
   ctx: ScoringContext,
@@ -300,46 +256,50 @@ export async function runLlmJudge(
   }
 
   const prompt = buildJudgePrompt(ctx, heuristic);
-  const errors: string[] = [];
+  const keys = ctx.llmKeys ?? (await emptyKeys());
 
-  // Prefer Groq for free headroom; Gemini fallback
   try {
-    const groq = await callGroq(prompt);
-    if (groq) {
-      const parsed = parseJudgeJson(groq.text);
+    const result = await chatJsonCompletion(prompt, keys);
+    if (result) {
+      const parsed = parseJudgeJson(result.text);
       if (parsed) {
         return {
           result: coerceJudge(parsed, heuristic),
-          meta: { provider: "groq", model: groq.model, used: true },
+          meta: { provider: result.provider, model: result.model, used: true },
         };
       }
-      errors.push("Groq JSON parse failed");
+      throw new Error("LLM JSON parse failed");
     }
   } catch (err) {
-    errors.push(err instanceof Error ? err.message : "Groq failed");
-  }
+    const joined = err instanceof Error ? err.message : "LLM failed";
+    const rateLimited = /429|rate.?limit|too many requests|tokens per minute|tpm|quota/i.test(joined);
+    const friendly = rateLimited
+      ? "LLM rate limit hit — trim the job description below the soft word limit, Save, wait ~1 min, then Score again."
+      : joined || "No LLM key or judge failed — heuristic keyword score used.";
 
-  try {
-    const gemini = await callGemini(prompt);
-    if (gemini) {
-      const parsed = parseJudgeJson(gemini.text);
-      if (parsed) {
-        return {
-          result: coerceJudge(parsed, heuristic),
-          meta: { provider: "gemini", model: gemini.model, used: true },
-        };
-      }
-      errors.push("Gemini JSON parse failed");
-    }
-  } catch (err) {
-    errors.push(err instanceof Error ? err.message : "Gemini failed");
+    return {
+      result: {
+        totalScore: heuristic.totalScore,
+        breakdown: heuristic.breakdown,
+        recommendedProfileKey: heuristic.recommendedProfileKey,
+        strengths: [
+          ...heuristic.strengths,
+          rateLimited
+            ? "AI judge skipped (rate limit) — heuristic score shown; trim JD words and retry."
+            : "AI judge unavailable — heuristic keyword score used (add an AI key in Settings).",
+        ],
+        gaps: heuristic.gaps,
+        recommendedProjects: heuristic.recommendedProjects,
+        evidenceUsed: heuristic.evidenceUsed,
+      },
+      meta: {
+        provider: "none",
+        model: "heuristic-fallback",
+        used: false,
+        error: friendly.slice(0, 400),
+      },
+    };
   }
-
-  const joined = errors.join(" | ");
-  const rateLimited = /429|rate.?limit|too many requests|tokens per minute|tpm|quota/i.test(joined);
-  const friendly = rateLimited
-    ? "LLM rate limit hit — trim the job description below the soft word limit, Save, wait ~1 min, then Score again."
-    : joined || "No LLM key or judge failed — heuristic keyword score used.";
 
   return {
     result: {
@@ -348,9 +308,7 @@ export async function runLlmJudge(
       recommendedProfileKey: heuristic.recommendedProfileKey,
       strengths: [
         ...heuristic.strengths,
-        rateLimited
-          ? "AI judge skipped (rate limit) — heuristic score shown; trim JD words and retry."
-          : "AI judge unavailable — heuristic keyword score used (add GROQ_API_KEY for LLM scoring).",
+        "AI judge unavailable — heuristic keyword score used (add an AI key in Settings).",
       ],
       gaps: heuristic.gaps,
       recommendedProjects: heuristic.recommendedProjects,
@@ -360,7 +318,7 @@ export async function runLlmJudge(
       provider: "none",
       model: "heuristic-fallback",
       used: false,
-      error: friendly.slice(0, 400),
+      error: "No LLM key configured for this user.",
     },
   };
 }

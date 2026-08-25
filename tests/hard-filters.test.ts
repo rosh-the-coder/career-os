@@ -23,6 +23,47 @@ describe("hard filters", () => {
     expect(result.reason).toMatch(/US/i);
   });
 
+  it("does not treat 'Remote status' as US-remote work authorization", () => {
+    const jd = `
+Creative Technologist (AI Video)
+London, UK, Europe
+Remote status
+Fully Remote
+Employment type
+Full-time
+Poolday is an autonomous video-editing platform. Use Claude Code daily.
+Enterprise teams use Poolday to produce video at scale.
+`;
+    const result = runHardFilters(
+      {
+        title: "Creative Technologist (AI Video)",
+        company: "Poolday.ai",
+        location: "London, UK, Europe",
+        remoteType: "Fully Remote",
+        descriptionRaw: jd,
+        descriptionClean: jd,
+      },
+      { ...baseSettings, includeFallbackVideoRoles: true },
+    );
+    expect(result.rejected).toBe(false);
+    expect(result.reason ?? "").not.toMatch(/US/i);
+  });
+
+  it("still rejects true US-based remote roles", () => {
+    const result = runHardFilters(
+      {
+        title: "Frontend Engineer",
+        company: "Acme",
+        location: "Remote - United States",
+        descriptionRaw: "This is a US-based remote role. Candidates must live in the USA.",
+        descriptionClean: "This is a US-based remote role. Candidates must live in the USA.",
+      },
+      baseSettings,
+    );
+    expect(result.rejected).toBe(true);
+    expect(result.reason).toMatch(/US/i);
+  });
+
   it("rejects physical/mechanical design engineer roles", () => {
     const result = runHardFilters(
       {

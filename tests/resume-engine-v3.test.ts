@@ -97,6 +97,7 @@ function fixtureInventory(): CareerInventory {
 
   return {
     userId: "u1",
+    isOperator: true,
     name: "Roshan Najar",
     settings: {
       location: "Dublin, Ireland",

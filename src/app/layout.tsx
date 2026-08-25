@@ -3,6 +3,7 @@ import { Fraunces, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/app-shell";
 import { CaseStudyModeBanner } from "@/components/case-study-mode-banner";
+import { AuthHashErrorGuard } from "@/components/auth-hash-error-guard";
 
 const plexSans = IBM_Plex_Sans({
   subsets: ["latin"],
@@ -24,13 +25,14 @@ const plexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: "CareerOS — Targeted Job Hunter",
-  description: "Evidence-first job matching and ATS application preparation for Roshan Najar.",
+  description: "Evidence-first job matching and ATS application preparation.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${plexSans.variable} ${fraunces.variable} ${plexMono.variable}`}>
       <body className="font-sans">
+        <AuthHashErrorGuard />
         <CaseStudyModeBanner />
         <AppShell>{children}</AppShell>
       </body>

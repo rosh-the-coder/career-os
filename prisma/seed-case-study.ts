@@ -24,6 +24,10 @@ async function main() {
     create: {
       email: CASE_STUDY_USER_EMAIL,
       name: CASE_STUDY_DEMO_CONTACT.name,
+      isOperator: true,
+      onboardingStatus: "complete",
+      onboardingStep: "done",
+      completenessScore: 100,
       settings: {
         create: {
           contactEmail: CASE_STUDY_DEMO_CONTACT.contactEmail,
@@ -41,11 +45,16 @@ async function main() {
           employmentStatus: "between_roles",
           layoffDate: "2026-07-17",
           noticePeriod: "Immediate",
+          marketsJson: JSON.stringify(["Ireland", "Dublin"]),
+          primaryMarketLabel: "Ireland",
+          targetRolesText: "UX Engineer, Product Designer",
         },
       },
     },
     update: {
       name: CASE_STUDY_DEMO_CONTACT.name,
+      isOperator: true,
+      onboardingStatus: "complete",
       settings: {
         update: {
           contactEmail: CASE_STUDY_DEMO_CONTACT.contactEmail,

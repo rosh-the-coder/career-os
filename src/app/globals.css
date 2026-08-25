@@ -33,6 +33,19 @@
     min-height: 100vh;
   }
 
+  button:not(:disabled),
+  [type="submit"]:not(:disabled),
+  [type="button"]:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [type="submit"]:disabled,
+  [type="button"]:disabled {
+    cursor: not-allowed;
+  }
+
   ::selection {
     background: rgba(196, 245, 66, 0.25);
   }
@@ -45,5 +58,17 @@
 
   .font-mono {
     font-family: var(--font-mono);
+  }
+
+  .btn-primary {
+    @apply rounded-md bg-accent px-5 py-2.5 text-sm font-medium text-canvas transition-colors hover:bg-accent-dim active:brightness-95 disabled:opacity-60;
+  }
+
+  .btn-primary-sm {
+    @apply rounded-md bg-accent px-4 py-2 text-sm font-medium text-canvas transition-colors hover:bg-accent-dim active:brightness-95 disabled:opacity-60;
+  }
+
+  .btn-secondary {
+    @apply rounded-md border border-accent/40 bg-accent/10 px-4 py-2 text-sm text-accent transition-colors hover:bg-accent/20 active:bg-accent/25 disabled:opacity-60;
   }
 }

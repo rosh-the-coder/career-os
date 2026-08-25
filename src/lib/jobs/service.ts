@@ -146,12 +146,14 @@ export async function scoreExistingJob(jobId: string) {
   const user = await getPrimaryUser();
   if (!user.settings) throw new Error("User settings missing");
 
-  const job = await prisma.job.findUniqueOrThrow({ where: { id: jobId } });
-  const [profiles, skills, projects, evidence] = await Promise.all([
+  const job = await prisma.job.findFirst({ where: { id: jobId, userId: user.id } });
+  if (!job) throw new Error("Job not found");
+  const [profiles, skills, projects, evidence, llmKeys] = await Promise.all([
     prisma.careerProfile.findMany({ where: { userId: user.id } }),
     prisma.skill.findMany({ where: { userId: user.id } }),
     prisma.project.findMany({ where: { userId: user.id } }),
     prisma.evidenceItem.findMany({ where: { userId: user.id } }),
+    (await import("@/lib/byok/keys")).resolveUserKeys(user.id, { isOperator: user.isOperator }),
   ]);
 
   const ctx = {
@@ -208,14 +210,28 @@ export async function scoreExistingJob(jobId: string) {
       confidence: e.confidence,
       verified: e.verified,
     })),
-    defaultProfileKey: profiles.find((p) => p.isDefault)?.key ?? "ux_engineer",
+    defaultProfileKey: profiles.find((p) => p.isDefault)?.key ?? profiles[0]?.key ?? "general",
+    candidate: {
+      name: user.name,
+      location: user.settings.location,
+      permission: user.settings.currentPermission,
+      permissionValidUntil: user.settings.permissionValidUntil,
+      permissionRenewableUntil: user.settings.permissionRenewableUntil,
+      salaryFloorEur: user.settings.salaryFloorEur,
+      positioning: user.settings.candidatePositioning || "",
+      canWorkFullTimeNow: user.settings.canWorkFullTimeNow,
+    },
+    llmKeys,
   };
 
   const heuristic = scoreJob(ctx);
   const judge = await runLlmJudge(ctx, heuristic);
   const result = mergeHeuristicWithJudge(heuristic, judge);
 
-  const profile = profiles.find((p) => p.key === result.recommendedProfileKey);
+  const profile =
+    profiles.find((p) => p.key === result.recommendedProfileKey) ??
+    profiles.find((p) => p.isDefault) ??
+    profiles[0];
 
   const priorFlags = parseJsonArray<{ code?: string; message: string; severity: string }>(
     job.softFlagsJson,

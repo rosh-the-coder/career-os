@@ -50,3 +50,31 @@ export function SidebarNav() {
     </nav>
   );
 }
+
+/** Horizontal nav for narrow viewports (sidebar is md+ only). */
+export function MobileNav() {
+  const pathname = usePathname();
+
+  return (
+    <nav className="-mx-1 flex gap-1 overflow-x-auto pb-1" aria-label="Main">
+      {NAV.map((item) => {
+        const active = isActivePath(pathname, item.href);
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={cn(
+              "shrink-0 rounded-md px-2.5 py-1.5 text-xs transition-colors",
+              active
+                ? "bg-accent/15 font-medium text-accent"
+                : "text-ink-muted hover:bg-panel-2 hover:text-ink",
+            )}
+            aria-current={active ? "page" : undefined}
+          >
+            {item.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}

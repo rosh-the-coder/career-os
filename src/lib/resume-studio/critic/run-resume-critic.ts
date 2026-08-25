@@ -24,7 +24,7 @@ export interface ResumeCritique {
   missingQuantifiedImpact: string[];
   suggestions: string[];
   overall: "ready" | "revise" | "blocked";
-  meta: { provider: "groq" | "gemini" | "heuristic"; model: string; used: boolean };
+  meta: { provider: "groq" | "gemini" | "openai" | "heuristic"; model: string; used: boolean };
 }
 
 function clamp10(n: unknown): number {
@@ -91,59 +91,34 @@ export function heuristicCritique(doc: CompositionDocument): ResumeCritique {
   };
 }
 
-async function callGroq(prompt: string): Promise<{ json: unknown; model: string } | null> {
-  const key = process.env.GROQ_API_KEY;
-  if (!key) return null;
-  const model = process.env.GROQ_SCORE_MODEL || "openai/gpt-oss-20b";
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model,
-      temperature: 0.2,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: "You are a senior recruiter reviewing a résumé. Return JSON only." },
-        { role: "user", content: prompt },
-      ],
-    }),
-    signal: AbortSignal.timeout(45000),
+async function callGroq(prompt: string): Promise<{ json: unknown; model: string; provider: string } | null> {
+  const { getPrimaryUser } = await import("@/lib/auth/user");
+  const { resolveUserKeys } = await import("@/lib/byok/keys");
+  const { chatJsonCompletion } = await import("@/lib/ai/chat");
+  const user = await getPrimaryUser();
+  const keys = await resolveUserKeys(user.id, { isOperator: user.isOperator });
+  const result = await chatJsonCompletion(prompt, keys, {
+    system: "You are a senior recruiter reviewing a résumé. Return JSON only.",
   });
-  if (!res.ok) return null;
-  const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-  const text = data.choices?.[0]?.message?.content ?? "";
+  if (!result) return null;
   try {
-    return { json: JSON.parse(text), model };
+    return { json: JSON.parse(result.text), model: result.model, provider: result.provider };
   } catch {
-    const start = text.indexOf("{");
-    const end = text.lastIndexOf("}");
-    if (start >= 0 && end > start) return { json: JSON.parse(text.slice(start, end + 1)), model };
+    const start = result.text.indexOf("{");
+    const end = result.text.lastIndexOf("}");
+    if (start >= 0 && end > start) {
+      return {
+        json: JSON.parse(result.text.slice(start, end + 1)),
+        model: result.model,
+        provider: result.provider,
+      };
+    }
     return null;
   }
 }
 
-async function callGemini(prompt: string): Promise<{ json: unknown; model: string } | null> {
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) return null;
-  const model = process.env.GEMINI_SCORE_MODEL || "gemini-2.0-flash";
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.2, responseMimeType: "application/json" },
-    }),
-    signal: AbortSignal.timeout(45000),
-  });
-  if (!res.ok) return null;
-  const data = (await res.json()) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
-  try {
-    return { json: JSON.parse(text), model };
-  } catch {
-    return null;
-  }
+async function callGemini(_prompt: string): Promise<{ json: unknown; model: string } | null> {
+  return null;
 }
 
 function buildPrompt(doc: CompositionDocument, jobTitle?: string, company?: string, jdSnippet?: string): string {
@@ -195,7 +170,11 @@ export async function runResumeCritic(opts: {
     const groq = await callGroq(prompt);
     if (groq) {
       const c = coerceCritique(groq.json, base);
-      c.meta = { provider: "groq", model: groq.model, used: true };
+      c.meta = {
+        provider: groq.provider as "groq" | "gemini" | "openai",
+        model: groq.model,
+        used: true,
+      };
       return c;
     }
     const gemini = await callGemini(prompt);

@@ -4,6 +4,7 @@
  * Timelines should continue to use chronologyIndex.
  */
 
+import { eligibleExperiences } from "./cv-eligibility";
 import { formatLockedOrRange, formatResumeDateRange } from "./date-format";
 import type { CareerInventory, LoadedExperience } from "./load-career-profile";
 import { getRolePolicy } from "./role-policy";
@@ -107,12 +108,18 @@ export function rankExperiences(opts: {
   const themes = policy.experiencePriorityThemes;
   const aiLike = opts.profileKey === "ai_engineer" || opts.profileKey === "applied_ai";
 
-  const eligible = opts.inventory.experiences.filter((e) => e.approvedForCV && e.verified);
+  const eligible = eligibleExperiences(opts.inventory);
 
   const scored = eligible.map((exp) => {
-    const blob = `${exp.umbrellaTitle} ${exp.themes.join(" ")} ${exp.bullets.join(" ")}`.toLowerCase();
+    const blob = `${exp.company} ${exp.umbrellaTitle} ${exp.themes.join(" ")} ${exp.bullets.join(" ")}`.toLowerCase();
     const themeHits = themes.filter((t) => blob.includes(t.toLowerCase())).length;
     const jdHits = exp.themes.filter((t) => opts.jobCorpus.includes(t.toLowerCase())).length;
+    // Token overlap with JD for niches without curated themes (retail, hospitality, etc.)
+    const tokens = blob
+      .split(/[^a-z0-9+#.]+/)
+      .filter((t) => t.length >= 4)
+      .slice(0, 40);
+    const corpusHits = tokens.filter((t) => opts.jobCorpus.includes(t)).length;
     const recency = /2026/.test(exp.startDate) || /2026/.test(exp.endDate ?? "")
       ? 1
       : /2025/.test(exp.startDate) || /2025/.test(exp.endDate ?? "")
@@ -122,6 +129,7 @@ export function rankExperiences(opts: {
     const computed =
       themeHits * 0.35 +
       jdHits * 0.25 +
+      Math.min(corpusHits, 8) * 0.08 +
       recency * 0.25 +
       (1 / (exp.sortOrder + 1)) * 0.15 +
       exp.relevanceScore * 0.5;

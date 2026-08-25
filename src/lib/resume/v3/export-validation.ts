@@ -3,13 +3,12 @@
  */
 
 import { containsRawIsoDate } from "@/lib/resume/v3/date-format";
+import { getRolePolicy } from "./role-policy";
 
 const REQUIRED_HEADINGS = [
   "PROFILE",
   "SKILLS",
   "PROFESSIONAL EXPERIENCE",
-  "SELECTED PROJECTS",
-  "EDUCATION",
 ] as const;
 
 const PROHIBITED_SNIPPETS = [
@@ -26,9 +25,46 @@ export interface ExportValidationResult {
   errors: string[];
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Index of a section heading on its own line — ignores the word in body copy. */
+function headingIndex(text: string, heading: string): number {
+  const re = new RegExp(`^${escapeRegExp(heading)}\\s*$`, "m");
+  const match = re.exec(text);
+  return match ? match.index : -1;
+}
+
+export function resumeExportValidationOpts(input: {
+  profileKey: string;
+  pageLength: 1 | 2;
+  sectionOrder?: readonly string[];
+}) {
+  const aiLike = input.profileKey === "ai_engineer" || input.profileKey === "applied_ai";
+  const policy = getRolePolicy(input.profileKey);
+  let experienceFirst = !policy.projectsFirst;
+  if (input.sectionOrder) {
+    const exp = input.sectionOrder.indexOf("experience");
+    const proj = input.sectionOrder.indexOf("selectedProjects");
+    if (exp >= 0 && proj >= 0) experienceFirst = exp < proj;
+  }
+  return {
+    requireAiEngineerTitle: aiLike,
+    requireTechnicalStack: input.pageLength === 2 && aiLike,
+    requireRedVelvetVault: input.pageLength === 2 && aiLike,
+    requireAethelgard: aiLike,
+    requireCareerOs: aiLike,
+    expectExperienceBeforeProjects: experienceFirst,
+    requireFullEmploymentHistory: input.pageLength === 2 && aiLike,
+  };
+}
+
 export function validateExportedResumeText(
   text: string,
   opts: {
+    /** Display name that must appear in the export (defaults to operator seed name). */
+    candidateName?: string;
     requireTechnicalStack?: boolean;
     requireRedVelvetVault?: boolean;
     requireAethelgard?: boolean;
@@ -42,13 +78,19 @@ export function validateExportedResumeText(
   const errors: string[] = [];
   const upper = text;
 
-  if (!/ROSHAN NAJAR/i.test(text)) errors.push("Missing ROSHAN NAJAR");
-  if (opts.requireAiEngineerTitle !== false && !/AI Engineer/i.test(text)) {
+  const candidateName = (opts.candidateName ?? "").trim();
+  if (candidateName) {
+    const nameRe = new RegExp(escapeRegExp(candidateName), "i");
+    if (!nameRe.test(text)) {
+      errors.push(`Missing candidate name (${candidateName})`);
+    }
+  }
+  if (opts.requireAiEngineerTitle && !/AI Engineer/i.test(text)) {
     errors.push("Missing AI Engineer title");
   }
 
   for (const h of REQUIRED_HEADINGS) {
-    if (!upper.includes(h)) errors.push(`Missing heading ${h}`);
+    if (headingIndex(upper, h) < 0) errors.push(`Missing heading ${h}`);
   }
 
   if (opts.requireTechnicalStack !== false) {
@@ -114,18 +156,29 @@ export function validateExportedResumeText(
   }
 
   if (opts.expectExperienceBeforeProjects !== false) {
-    const exp = upper.indexOf("PROFESSIONAL EXPERIENCE");
-    const proj = upper.indexOf("SELECTED PROJECTS");
-    if (exp < 0 || proj < 0 || !(exp < proj)) {
+    const exp = headingIndex(upper, "PROFESSIONAL EXPERIENCE");
+    const proj = headingIndex(upper, "SELECTED PROJECTS");
+    // Projects section may be omitted for niches with no project inventory
+    if (proj >= 0 && (exp < 0 || !(exp < proj))) {
       errors.push("PROFESSIONAL EXPERIENCE must appear before SELECTED PROJECTS");
     }
   }
 
-  const markers = ["PROFILE", "SKILLS", "PROFESSIONAL EXPERIENCE", "SELECTED PROJECTS", "EDUCATION"];
+  // Match role-policy section order: AI/experience-first vs design projects-first
+  const markers =
+    opts.expectExperienceBeforeProjects === false
+      ? ["PROFILE", "SKILLS", "SELECTED PROJECTS", "PROFESSIONAL EXPERIENCE", "EDUCATION"]
+      : ["PROFILE", "SKILLS", "PROFESSIONAL EXPERIENCE", "SELECTED PROJECTS", "EDUCATION"];
   let last = -1;
   for (const m of markers) {
-    const idx = upper.indexOf(m);
-    if (idx < 0 || idx < last) {
+    const idx = headingIndex(upper, m);
+    if (idx < 0) {
+      // Optional when no projects were selected / rendered
+      if (m === "SELECTED PROJECTS") continue;
+      errors.push(`Section order broken at ${m}`);
+      break;
+    }
+    if (idx < last) {
       errors.push(`Section order broken at ${m}`);
       break;
     }

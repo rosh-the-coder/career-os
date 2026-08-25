@@ -12,20 +12,24 @@ export interface BoardPresenceResult {
   note?: string;
 }
 
-function searchKeys() {
+export type PresenceKeys = {
+  brave?: string;
+  serp?: string;
+};
+
+function envSearchKeys(): PresenceKeys {
   return {
     brave: process.env.BRAVE_SEARCH_API_KEY?.trim(),
     serp: process.env.SERPAPI_KEY?.trim(),
   };
 }
 
-export function presenceSearchConfigured(): boolean {
-  const k = searchKeys();
+export function presenceSearchConfigured(keys?: PresenceKeys): boolean {
+  const k = keys ?? envSearchKeys();
   return Boolean(k.brave || k.serp);
 }
 
-async function searchWeb(query: string): Promise<string[]> {
-  const keys = searchKeys();
+async function searchWeb(query: string, keys: PresenceKeys): Promise<string[]> {
   const snippets: string[] = [];
 
   if (keys.brave) {
@@ -80,25 +84,30 @@ function detectBoards(blob: string): PresenceBoard[] {
 }
 
 /** Check whether search engines index this role on LinkedIn / Indeed / Glassdoor. */
-export async function checkBoardPresence(input: {
-  title: string;
-  company: string;
-  location?: string;
-}): Promise<BoardPresenceResult> {
-  if (!presenceSearchConfigured()) {
+export async function checkBoardPresence(
+  input: {
+    title: string;
+    company: string;
+    location?: string;
+  },
+  keys?: PresenceKeys,
+): Promise<BoardPresenceResult> {
+  const resolved = keys ?? envSearchKeys();
+  if (!presenceSearchConfigured(resolved)) {
     return {
       checked: false,
       boards: [],
       query: "",
-      note: "Add BRAVE_SEARCH_API_KEY or SERPAPI_KEY to verify LinkedIn/Indeed/Glassdoor presence via search index.",
+      note: "Add Brave or SerpAPI in Settings to verify LinkedIn/Indeed/Glassdoor presence via search index.",
     };
   }
 
-  const loc = input.location?.split(/[,;]/)[0]?.trim() || "Dublin";
-  const query = `"${input.title}" "${input.company}" (${loc} OR Ireland) (site:linkedin.com/jobs OR site:indeed.com OR site:ie.indeed.com OR site:glassdoor.com OR site:glassdoor.ie)`;
+  const loc = input.location?.split(/[,;]/)[0]?.trim() || "";
+  const locClause = loc ? `(${loc})` : "";
+  const query = `"${input.title}" "${input.company}" ${locClause} (site:linkedin.com/jobs OR site:indeed.com OR site:ie.indeed.com OR site:glassdoor.com OR site:glassdoor.ie)`;
 
   try {
-    const snippets = await searchWeb(query);
+    const snippets = await searchWeb(query, resolved);
     const boards = detectBoards(snippets.join("\n"));
     return {
       checked: true,

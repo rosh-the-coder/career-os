@@ -311,64 +311,21 @@ Rules:
 }
 
 async function callGroqJson(prompt: string): Promise<{ text: string; model: string } | null> {
-  const key = process.env.GROQ_API_KEY?.trim();
-  if (!key) return null;
-  const model = process.env.GROQ_SCORE_MODEL?.trim() || "openai/gpt-oss-20b";
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${key}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      temperature: 0.2,
-      response_format: { type: "json_object" },
-      messages: [
-        {
-          role: "system",
-          content:
-            "You rewrite resume bullets for ATS keyword fit. Reply with JSON only. Never invent experience.",
-        },
-        { role: "user", content: prompt },
-      ],
-    }),
-    signal: AbortSignal.timeout(45000),
+  const { getPrimaryUser } = await import("@/lib/auth/user");
+  const { resolveUserKeys } = await import("@/lib/byok/keys");
+  const { chatJsonCompletion } = await import("@/lib/ai/chat");
+  const user = await getPrimaryUser();
+  const keys = await resolveUserKeys(user.id, { isOperator: user.isOperator });
+  const result = await chatJsonCompletion(prompt, keys, {
+    system:
+      "You rewrite resume bullets for ATS keyword fit. Reply with JSON only. Never invent experience.",
   });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`Groq ${res.status}: ${body.slice(0, 200)}`);
-  }
-  const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-  const text = data.choices?.[0]?.message?.content;
-  if (!text) throw new Error("Groq empty response");
-  return { text, model };
+  return result ? { text: result.text, model: result.model } : null;
 }
 
-async function callGeminiJson(prompt: string): Promise<{ text: string; model: string } | null> {
-  const key = process.env.GEMINI_API_KEY?.trim();
-  if (!key) return null;
-  const model = process.env.GEMINI_SCORE_MODEL?.trim() || "gemini-2.0-flash";
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.2, responseMimeType: "application/json" },
-    }),
-    signal: AbortSignal.timeout(45000),
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    throw new Error(`Gemini ${res.status}: ${body.slice(0, 200)}`);
-  }
-  const data = (await res.json()) as {
-    candidates?: { content?: { parts?: { text?: string }[] } }[];
-  };
-  const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
-  if (!text) throw new Error("Gemini empty response");
-  return { text, model };
+async function callGeminiJson(_prompt: string): Promise<{ text: string; model: string } | null> {
+  // Routing handled in callGroqJson via chatJsonCompletion (OpenAI → Gemini → Groq)
+  return null;
 }
 
 function parseEditsJson(text: string): Omit<AtsEditSuggestion, "claimStatus" | "claimNote">[] {

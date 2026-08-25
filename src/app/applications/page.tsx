@@ -5,6 +5,8 @@ import { listTrackerRows } from "@/lib/applications/service";
 export const dynamic = "force-dynamic";
 
 export default async function ApplicationsPage() {
+  const { requireOnboarded } = await import("@/lib/auth/onboarding-gate");
+  await requireOnboarded();
   const rows = await listTrackerRows();
 
   return (

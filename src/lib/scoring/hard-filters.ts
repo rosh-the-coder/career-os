@@ -47,7 +47,12 @@ const VIDEO_FALLBACK_RE =
 const UK_ONLY_RE = /\b(uk only|united kingdom only|must be (based )?in (the )?uk|right to work in the uk)\b/i;
 const US_ONLY_RE =
   /\b(us only|usa only|united states only|must be (based )?in (the )?(us|usa)|authorized to work in the (us|united states)|green card|must have us work authorization)\b/i;
-const REMOTE_US_RE = /\b(remote.*(us|usa|united states)|(us|usa)-?based remote)\b/i;
+/** Word-bounded US tokens only — never match the "us" inside "status"/"useful"/etc. */
+const REMOTE_US_RE =
+  /\bremote(?:\s|\W){0,40}\b(?:us|usa|united states)\b|\b(?:us|usa|united[\s-]states)\b(?:\s|\W){0,20}(?:based\s+)?remote\b|\b(?:us|usa)-based remote\b/i;
+/** Clear non-US geo — used to suppress US-remote false positives on Europe/UK/Ireland listings. */
+const NON_US_GEO_RE =
+  /\b(ireland|dublin|europe|emea|\beu\b|uk|united kingdom|london|berlin|amsterdam|paris|lisbon|madrid|remote[-\s]?eu)\b/i;
 
 const NO_SPONSORSHIP_RE =
   /\b(no sponsorship|cannot sponsor|will not sponsor|unable to sponsor|must (already )?have (the )?right to work|does not (offer|provide) (visa |work )?sponsorship)\b/i;
@@ -112,7 +117,13 @@ export function runHardFilters(
     };
   }
 
-  if (US_ONLY_RE.test(text) || (REMOTE_US_RE.test(text) && !/\bireland\b/i.test(text))) {
+  const explicitUsOnly = US_ONLY_RE.test(text);
+  const remoteUs =
+    REMOTE_US_RE.test(text) &&
+    !NON_US_GEO_RE.test(text) &&
+    !NON_US_GEO_RE.test(job.location ?? "") &&
+    !NON_US_GEO_RE.test(job.country ?? "");
+  if (explicitUsOnly || remoteUs) {
     return {
       rejected: true,
       reason: "US-only or remote role requiring US work authorization",

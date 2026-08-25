@@ -82,7 +82,9 @@ export function toTrackerRow(a: {
 }
 
 export async function listTrackerRows(): Promise<TrackerRow[]> {
+  const user = await getPrimaryUser();
   const rows = await prisma.application.findMany({
+    where: { userId: user.id },
     include: { job: true, resumeVersion: true },
     orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
   });
@@ -91,9 +93,10 @@ export async function listTrackerRows(): Promise<TrackerRow[]> {
 
 export async function createApplicationFromJob(jobId: string) {
   const user = await getPrimaryUser();
-  const job = await prisma.job.findUniqueOrThrow({ where: { id: jobId } });
+  const job = await prisma.job.findFirst({ where: { id: jobId, userId: user.id } });
+  if (!job) throw new Error("Job not found");
   const latestResume = await prisma.resumeVersion.findFirst({
-    where: { jobId },
+    where: { jobId, userId: user.id },
     orderBy: { createdAt: "desc" },
   });
 
@@ -190,6 +193,8 @@ export type ApplicationPatch = {
 };
 
 export async function patchApplication(id: string, patch: ApplicationPatch) {
+  const { app } = await (await import("@/lib/auth/ownership")).requireOwnedApplication(id);
+  void app;
   const data: Record<string, unknown> = {};
   if ("companyName" in patch) data.companyName = patch.companyName;
   if ("positionTitle" in patch) data.positionTitle = patch.positionTitle;
@@ -215,8 +220,15 @@ export async function patchApplication(id: string, patch: ApplicationPatch) {
 }
 
 export async function reorderApplications(orderedIds: string[]) {
+  const user = await getPrimaryUser();
+  const owned = await prisma.application.findMany({
+    where: { userId: user.id, id: { in: orderedIds } },
+    select: { id: true },
+  });
+  const ownedSet = new Set(owned.map((a) => a.id));
+  const safe = orderedIds.filter((id) => ownedSet.has(id));
   await prisma.$transaction(
-    orderedIds.map((id, index) =>
+    safe.map((id, index) =>
       prisma.application.update({
         where: { id },
         data: { sortOrder: index + 1 },
@@ -226,5 +238,6 @@ export async function reorderApplications(orderedIds: string[]) {
 }
 
 export async function deleteApplication(id: string) {
+  await (await import("@/lib/auth/ownership")).requireOwnedApplication(id);
   return prisma.application.delete({ where: { id } });
 }

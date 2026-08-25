@@ -23,6 +23,7 @@ import {
   resumeEngineVersion,
   v3ToAtsContent,
   v3ToMarkdown,
+  resumeExportValidationOpts,
   validateExportedResumeText,
   COMPOSER_VERSION,
   RESUME_SCHEMA_V3,
@@ -82,22 +83,23 @@ export async function persistAtsResumeVersion(opts: {
   composerVersion?: string;
   schemaVersion?: string;
   pageCount?: number;
+  personName?: string;
 }) {
   const markdown = opts.contentV3 ? v3ToMarkdown(opts.contentV3) : atsToMarkdown(opts.ats);
   const draft = atsContentToDraft(opts.ats);
 
   if (opts.contentV3) {
-    const profileKey = opts.contentV3.target.profileKey;
-    const aiLike = profileKey === "ai_engineer" || profileKey === "applied_ai";
-    const exportCheck = validateExportedResumeText(markdown, {
-      requireAiEngineerTitle: aiLike,
-      requireTechnicalStack: opts.pageLength === 2 && aiLike,
-      requireRedVelvetVault: opts.pageLength === 2 && aiLike,
-      requireAethelgard: aiLike,
-      requireCareerOs: aiLike,
-      expectExperienceBeforeProjects: aiLike,
-      requireFullEmploymentHistory: opts.pageLength === 2 && aiLike,
-    });
+    const exportCheck = validateExportedResumeText(
+      markdown,
+      {
+        ...resumeExportValidationOpts({
+          profileKey: opts.contentV3.target.profileKey,
+          pageLength: opts.pageLength,
+          sectionOrder: opts.contentV3.sectionOrder,
+        }),
+        candidateName: opts.personName ?? opts.contentV3.header.name,
+      },
+    );
     if (!exportCheck.ok) {
       throw new Error(`Export validation failed: ${exportCheck.errors.join("; ")}`);
     }
@@ -113,7 +115,7 @@ export async function persistAtsResumeVersion(opts: {
     );
   }
 
-  const fileBase = `${buildResumeFileName(opts.profileName.replace(/\s+/g, "_"), opts.company)}_${Date.now().toString(36)}`;
+  const fileBase = `${buildResumeFileName(opts.profileName.replace(/\s+/g, "_"), opts.company, new Date(), opts.personName ?? "Candidate")}_${Date.now().toString(36)}`;
   const outDir = exportDir();
   let docxPath: string;
   let pdfPath: string | null;
@@ -183,10 +185,11 @@ export async function generateResumeForJob(jobId: string, pageLength: 1 | 2 = 1)
   const user = await getPrimaryUser();
   if (!user.settings) throw new Error("Missing settings");
 
-  const job = await prisma.job.findUniqueOrThrow({
-    where: { id: jobId },
+  const job = await prisma.job.findFirst({
+    where: { id: jobId, userId: user.id },
     include: { score: { include: { profile: true } } },
   });
+  if (!job) throw new Error("Job not found");
 
   if (job.status === "rejected") {
     throw new Error("Cannot generate resume for hard-rejected job");
@@ -314,17 +317,17 @@ async function generateResumeForJobV4(
   }
 
   const markdown = composition.readingOrder.join("\n") + "\n";
-  const profileKey = contentV3.target.profileKey;
-  const aiLike = profileKey === "ai_engineer" || profileKey === "applied_ai";
-  const exportCheck = validateExportedResumeText(markdown, {
-    requireAiEngineerTitle: aiLike,
-    requireTechnicalStack: pageLength === 2 && aiLike,
-    requireRedVelvetVault: pageLength === 2 && aiLike,
-    requireAethelgard: aiLike,
-    requireCareerOs: aiLike,
-    expectExperienceBeforeProjects: aiLike,
-    requireFullEmploymentHistory: pageLength === 2 && aiLike,
-  });
+  const exportCheck = validateExportedResumeText(
+    markdown,
+    {
+      ...resumeExportValidationOpts({
+        profileKey: contentV3.target.profileKey,
+        pageLength,
+        sectionOrder: contentV3.sectionOrder,
+      }),
+      candidateName: contentV3.header.name || inventory.name,
+    },
+  );
   if (!exportCheck.ok) {
     throw new Error(`Export validation failed: ${exportCheck.errors.join("; ")}`);
   }
@@ -494,7 +497,9 @@ async function resolveResumeVersion(jobId: string, resumeVersionId?: string | nu
 }
 
 export async function analyzeResumeKeywordsForJob(jobId: string, resumeVersionId?: string) {
-  const job = await prisma.job.findUniqueOrThrow({ where: { id: jobId } });
+  const user = await getPrimaryUser();
+  const job = await prisma.job.findFirst({ where: { id: jobId, userId: user.id } });
+  if (!job) throw new Error("Job not found");
   const version = await resolveResumeVersion(jobId, resumeVersionId);
 
   const skills = await prisma.skill.findMany({ where: { userId: job.userId } });
@@ -527,7 +532,9 @@ export async function analyzeResumeKeywordsForJob(jobId: string, resumeVersionId
 }
 
 export async function suggestResumeAtsEditsForJob(jobId: string, resumeVersionId?: string) {
-  const job = await prisma.job.findUniqueOrThrow({ where: { id: jobId } });
+  const user = await getPrimaryUser();
+  const job = await prisma.job.findFirst({ where: { id: jobId, userId: user.id } });
+  if (!job) throw new Error("Job not found");
   const version = await resolveResumeVersion(jobId, resumeVersionId);
   const ats = parseAtsFromContentJson(version.contentJson);
   if (!ats) throw new Error("Resume content is missing structured ATS data");
@@ -567,10 +574,12 @@ export async function applyResumeAtsEditsForJob(
   resumeVersionId: string,
   editIndexes: number[],
 ) {
-  const job = await prisma.job.findUniqueOrThrow({
-    where: { id: jobId },
+  const user = await getPrimaryUser();
+  const job = await prisma.job.findFirst({
+    where: { id: jobId, userId: user.id },
     include: { score: { include: { profile: true } } },
   });
+  if (!job) throw new Error("Job not found");
   const source = await resolveResumeVersion(jobId, resumeVersionId);
   const ats = parseAtsFromContentJson(source.contentJson);
   if (!ats) throw new Error("Resume content is missing structured ATS data");

@@ -8,7 +8,8 @@ import { getPrimaryUser } from "@/lib/auth/user";
 export const dynamic = "force-dynamic";
 
 export default async function ApprovePage() {
-  const user = await getPrimaryUser();
+  const { requireOnboarded } = await import("@/lib/auth/onboarding-gate");
+  const user = await requireOnboarded();
   const jobs = await prisma.job.findMany({
     where: {
       userId: user.id,

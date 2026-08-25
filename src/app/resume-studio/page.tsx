@@ -12,7 +12,8 @@ import { getPrimaryUser } from "@/lib/auth/user";
 export const dynamic = "force-dynamic";
 
 export default async function ResumeStudioPage() {
-  const user = await getPrimaryUser();
+  const { requireOnboarded } = await import("@/lib/auth/onboarding-gate");
+  const user = await requireOnboarded();
   const versions = await prisma.resumeVersion.findMany({
     where: { userId: user.id },
     include: { job: true, profile: true, parentVersion: true },

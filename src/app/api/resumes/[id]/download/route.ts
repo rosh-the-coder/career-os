@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { readFile } from "fs/promises";
 import path from "path";
 import os from "os";
-import { prisma } from "@/lib/db/prisma";
 import {
   buildAtsPdfBuffer,
   generateDocxAndPdf,
@@ -12,6 +11,8 @@ import {
 import { exportCompositionDocx, exportCompositionPdf } from "@/lib/resume-studio/export";
 import type { CompositionDocument } from "@/lib/resume-studio/composition/types";
 import type { ResumeDraft } from "@/lib/ai/types";
+import { requireOwnedResume } from "@/lib/auth/ownership";
+import { slugifyPersonName } from "@/lib/onboarding/defaults";
 
 export const runtime = "nodejs";
 
@@ -22,11 +23,11 @@ export async function GET(
   const { id } = await context.params;
   const format = new URL(_request.url).searchParams.get("format") ?? "docx";
 
-  const version = await prisma.resumeVersion.findUnique({
-    where: { id },
-    include: { profile: true, job: true },
-  });
-  if (!version) {
+  let version;
+  let user;
+  try {
+    ({ version, user } = await requireOwnedResume(id));
+  } catch {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -76,7 +77,7 @@ export async function GET(
     }
   }
 
-  const fileBase = version.fileName ?? `Roshan_Najar_${version.id}`;
+  const fileBase = version.fileName ?? `${slugifyPersonName(user.name)}_${version.id}`;
 
   if (composition) {
     try {
@@ -115,17 +116,18 @@ export async function GET(
     return NextResponse.json({ error: "Corrupt resume content" }, { status: 500 });
   }
 
+  const settings = version.user.settings;
   if (!ats) {
     ats = toAtsContent(
       draft,
       {
-        name: "Roshan Najar",
-        location: "Dublin, Ireland",
-        email: "theonlyroshn@gmail.com",
-        phone: "+353 838501604",
-        portfolioUrl: "https://theonlyrosh.com/",
-        githubUrl: "https://github.com/rosh-the-coder",
-        linkedinUrl: "https://www.linkedin.com/in/roshan-najar-0556711b4/",
+        name: user.name,
+        location: settings?.location || "",
+        email: settings?.contactEmail || user.email,
+        phone: settings?.phone || "",
+        portfolioUrl: settings?.portfolioUrl || "",
+        githubUrl: settings?.githubUrl || "",
+        linkedinUrl: settings?.linkedinUrl || "",
       },
       version.profile.name,
     );

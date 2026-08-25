@@ -2,7 +2,9 @@ import Link from "next/link";
 import { prisma } from "@/lib/db/prisma";
 import { PageHeader, Panel, ScoreBadge, StatusPill } from "@/components/ui";
 import { DashboardActions } from "@/components/dashboard-actions";
-import { getPrimaryUser } from "@/lib/auth/user";
+import { FirstRunChecklist } from "@/components/onboarding/first-run-checklist";
+import { dismissFirstRunChecklistAction } from "@/app/onboarding/actions";
+import { parseSetupChecklist } from "@/lib/onboarding/setup-checklist";
 
 export const dynamic = "force-dynamic";
 
@@ -20,39 +22,71 @@ function dedupeByUrl<T extends { id: string; url: string | null; score: { totalS
   return [...best.values()];
 }
 
-export default async function DashboardPage() {
-  const user = await getPrimaryUser();
+function greetingName(name: string) {
+  const first = name.trim().split(/\s+/)[0] || "there";
+  const hour = new Date().getHours();
+  const hello = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  return `${hello}, ${first}.`;
+}
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ firstrun?: string }>;
+}) {
+  const { requireOnboarded } = await import("@/lib/auth/onboarding-gate");
+  const user = await requireOnboarded();
+  const sp = await searchParams;
   const settings = user.settings;
   const batchTarget = settings?.dailyBatchTarget ?? 25;
   const userId = user.id;
+  const checklist = parseSetupChecklist(settings?.setupChecklistJson);
 
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
 
-  const [allJobs, euJobsRaw, applicationCount, estimateCount] = await Promise.all([
-    prisma.job.findMany({
-      where: { userId },
-      include: { score: true },
-      orderBy: { collectedAt: "desc" },
-    }),
-    prisma.job.findMany({
-      where: {
-        userId,
-        listingCategory: "eu_sponsorship",
-        NOT: { status: "rejected" },
-      },
-      include: { score: true },
-      orderBy: { collectedAt: "desc" },
-      take: 30,
-    }),
-    prisma.application.count({ where: { userId } }),
-    prisma.metric.count({
-      where: {
-        evidence: { userId },
-        OR: [{ isEstimate: true }, { needsReview: true }],
-      },
-    }),
-  ]);
+  const [allJobs, euJobsRaw, applicationCount, estimateCount, resumeVersionCount, scoredForReview] =
+    await Promise.all([
+      prisma.job.findMany({
+        where: { userId },
+        include: { score: true },
+        orderBy: { collectedAt: "desc" },
+      }),
+      prisma.job.findMany({
+        where: {
+          userId,
+          listingCategory: "eu_sponsorship",
+          NOT: { status: "rejected" },
+        },
+        include: { score: true },
+        orderBy: { collectedAt: "desc" },
+        take: 30,
+      }),
+      prisma.application.count({ where: { userId } }),
+      prisma.metric.count({
+        where: {
+          evidence: { userId },
+          OR: [{ isEstimate: true }, { needsReview: true }],
+        },
+      }),
+      prisma.resumeVersion.count({ where: { userId } }),
+      prisma.job.count({
+        where: {
+          userId,
+          status: { in: ["scored", "materials_ready", "saved"] },
+        },
+      }),
+    ]);
+
+  // Enrich checklist from live data (without inventing progress)
+  const liveChecklist = {
+    ...checklist,
+    firstJob: checklist.firstJob || scoredForReview > 0,
+    firstResume: checklist.firstResume || resumeVersionCount > 0,
+    firstApp: checklist.firstApp || applicationCount > 0,
+  };
+  const showChecklist =
+    sp.firstrun === "1" || (!liveChecklist.dismissed && user.onboardingStatus === "complete");
 
   const uniqueJobs = dedupeByUrl(allJobs);
   const uniqueRejected = uniqueJobs.filter((j) => j.status === "rejected").length;
@@ -80,13 +114,45 @@ export default async function DashboardPage() {
   const euJobs = dedupeByUrl(euJobsRaw).slice(0, 15);
   const hiddenDupes = allJobs.length - uniqueJobs.length;
 
+  const followUps = await prisma.application.count({
+    where: {
+      userId,
+      OR: [
+        { status: { in: ["applied", "interviewing", "follow_up", "Follow-up"] } },
+        { followUpAt: { not: null } },
+      ],
+    },
+  }).catch(() => 0);
+
+  const resumesNeedingApproval = await prisma.resumeVersion
+    .count({
+      where: { userId, validationStatus: { in: ["pending", "needs_review"] } },
+    })
+    .catch(() => 0);
+
   return (
     <div>
       <PageHeader
         title="Dashboard"
-        description={`Daily Ireland batch target: ${batchTarget}. EU sponsorship is a separate exclusive track. Model A: prepare packs — you submit.`}
+        description={`${greetingName(user.name)} ${
+          scoredForReview > 0 || resumesNeedingApproval > 0 || followUps > 0
+            ? [
+                scoredForReview > 0 ? `${scoredForReview} role${scoredForReview === 1 ? "" : "s"} ready for review` : null,
+                resumesNeedingApproval > 0
+                  ? `${resumesNeedingApproval} résumé${resumesNeedingApproval === 1 ? "" : "s"} need approval`
+                  : null,
+                followUps > 0 ? `${followUps} application${followUps === 1 ? "" : "s"} need follow-up` : null,
+              ]
+                .filter(Boolean)
+                .join(". ") + "."
+            : `Daily Ireland batch target: ${batchTarget}. Model A: prepare packs — you submit.`
+        }`}
         action={<DashboardActions />}
       />
+
+      {showChecklist && !liveChecklist.dismissed ? (
+        <FirstRunChecklist initial={liveChecklist} onDismiss={dismissFirstRunChecklistAction} />
+      ) : null}
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {[
@@ -128,6 +194,23 @@ export default async function DashboardPage() {
         </Panel>
       ) : null}
 
+      {uniqueJobs.length === 0 ? (
+        <Panel className="mb-6 border-accent/20">
+          <h2 className="font-display text-xl">No roles yet</h2>
+          <p className="mt-2 text-sm text-ink-muted">
+            Run discovery or import a job description to start scoring fit against your inventory.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-3 text-sm">
+            <Link href="/onboarding/first-run" className="text-accent hover:underline">
+              Run first search →
+            </Link>
+            <Link href="/jobs/new" className="text-ink-muted hover:text-ink">
+              Import a job
+            </Link>
+          </div>
+        </Panel>
+      ) : null}
+
       <Panel className="mb-6">
         <div className="mb-4 flex items-center justify-between">
           <div>
@@ -145,6 +228,7 @@ export default async function DashboardPage() {
             </Link>
           </div>
         </div>
+
         {irelandPriority.length === 0 ? (
           <p className="text-sm text-ink-muted">
             No Ireland matches yet. Click <span className="text-ink">Run daily discovery</span> or import a

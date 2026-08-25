@@ -43,23 +43,21 @@ Add:
   - `http://localhost:3000/auth/callback`
   - `https://YOUR-APP.vercel.app/auth/callback`
 
-Enable **Email** provider (magic link). Disable public sign-ups if you want; allowlist is also enforced in app code via `ALLOWED_EMAILS`.
+Enable **Email** provider (magic link). For Google:
 
----
+1. **Authentication → Providers → Google** → enable
+2. Create OAuth credentials in [Google Cloud Console](https://console.cloud.google.com/apis/credentials) (Web client)
+3. Authorized redirect URI from Supabase (shown on the Google provider page — usually `https://YOUR_PROJECT.supabase.co/auth/v1/callback`)
+4. Paste Client ID + Secret into Supabase
 
-## 2. Local env
+Add Site URL + Redirect URLs:
 
-```bash
-cp .env.example .env
-```
+- Site URL: `http://localhost:3000` (local) and later your Vercel URL
+- Redirect URLs:
+  - `http://localhost:3000/auth/callback`
+  - `https://YOUR-APP.vercel.app/auth/callback`
 
-Fill in Supabase + Gemini values. For first cloud wiring you can keep:
-
-```text
-DEV_BYPASS_AUTH=true
-```
-
-so you can seed and develop without magic-link friction. Set it to `false` before production.
+Disable public sign-ups in Supabase if you want; CareerOS also enforces `ALLOWED_EMAILS` / invites. Logging in with `theonlyroshn@gmail.com` (allowlisted) **reattaches to your existing seeded profile** — it does not wipe jobs/resumes.
 
 Then:
 

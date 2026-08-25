@@ -5,6 +5,31 @@
 import { prisma } from "@/lib/db/prisma";
 import { parseJsonArray, parseJsonObject } from "@/lib/utils";
 
+type ResumeBullet = { text: string; profiles?: string[]; evidenceIds?: string[] };
+
+/** Imported onboarding may store plain strings; Studio stores { text, profiles }. */
+function normalizeResumeBullets(json: string | null | undefined): ResumeBullet[] {
+  const raw = parseJsonArray<unknown>(json ?? "[]");
+  return raw
+    .map((item): ResumeBullet | null => {
+      if (typeof item === "string") {
+        const text = item.trim();
+        return text ? { text, profiles: ["*"] } : null;
+      }
+      if (item && typeof item === "object" && "text" in item) {
+        const text = String((item as ResumeBullet).text ?? "").trim();
+        if (!text) return null;
+        return {
+          text,
+          profiles: (item as ResumeBullet).profiles,
+          evidenceIds: (item as ResumeBullet).evidenceIds,
+        };
+      }
+      return null;
+    })
+    .filter(Boolean) as ResumeBullet[];
+}
+
 export interface LoadedMetric {
   id: string;
   label: string;
@@ -130,6 +155,7 @@ export interface LoadedSettings {
 
 export interface CareerInventory {
   userId: string;
+  isOperator: boolean;
   name: string;
   settings: LoadedSettings;
   profiles: LoadedProfile[];
@@ -195,29 +221,21 @@ function mapEvidence(e: {
   };
 }
 
-export async function loadCareerInventory(userId?: string): Promise<CareerInventory> {
-  const user = userId
-    ? await prisma.user.findUniqueOrThrow({
-        where: { id: userId },
-        include: {
-          settings: true,
-          careerProfiles: true,
-          projects: { include: { evidenceItems: { include: { metrics: true } } }, orderBy: { sortOrder: "asc" } },
-          experiences: { include: { evidenceItems: { include: { metrics: true } } }, orderBy: { sortOrder: "asc" } },
-          skills: { orderBy: [{ category: "asc" }, { name: "asc" }] },
-          evidenceItems: { include: { metrics: true } },
-        },
-      })
-    : await prisma.user.findFirstOrThrow({
-        include: {
-          settings: true,
-          careerProfiles: true,
-          projects: { include: { evidenceItems: { include: { metrics: true } } }, orderBy: { sortOrder: "asc" } },
-          experiences: { include: { evidenceItems: { include: { metrics: true } } }, orderBy: { sortOrder: "asc" } },
-          skills: { orderBy: [{ category: "asc" }, { name: "asc" }] },
-          evidenceItems: { include: { metrics: true } },
-        },
-      });
+export async function loadCareerInventory(userId: string): Promise<CareerInventory> {
+  if (!userId) {
+    throw new Error("loadCareerInventory requires userId — never load a random workspace");
+  }
+  const user = await prisma.user.findUniqueOrThrow({
+    where: { id: userId },
+    include: {
+      settings: true,
+      careerProfiles: true,
+      projects: { include: { evidenceItems: { include: { metrics: true } } }, orderBy: { sortOrder: "asc" } },
+      experiences: { include: { evidenceItems: { include: { metrics: true } } }, orderBy: { sortOrder: "asc" } },
+      skills: { orderBy: [{ category: "asc" }, { name: "asc" }] },
+      evidenceItems: { include: { metrics: true } },
+    },
+  });
 
   if (!user.settings) throw new Error("Missing settings for career inventory");
 
@@ -225,6 +243,7 @@ export async function loadCareerInventory(userId?: string): Promise<CareerInvent
 
   return {
     userId: user.id,
+    isOperator: user.isOperator,
     name: user.name,
     settings: {
       location: user.settings.location,
@@ -264,9 +283,7 @@ export async function loadCareerInventory(userId?: string): Promise<CareerInvent
       problemStatement: p.problemStatement,
       solutionSummary: p.solutionSummary,
       technicalSummary: p.technicalSummary,
-      resumeBullets: parseJsonArray<{ text: string; profiles?: string[]; evidenceIds?: string[] }>(
-        p.resumeBulletsJson,
-      ),
+      resumeBullets: normalizeResumeBullets(p.resumeBulletsJson),
       roleVariants: parseJsonObject<Record<string, string>>(p.roleVariantsJson),
       keywords: parseJsonArray<string>(p.keywordsJson),
       projectUrl: p.projectUrl,
@@ -294,9 +311,7 @@ export async function loadCareerInventory(userId?: string): Promise<CareerInvent
       alternativeTitles: parseJsonObject<Record<string, string>>(e.alternativeTitlesJson),
       themes: parseJsonArray<string>(e.themesJson),
       bullets: parseJsonArray<string>(e.bulletsJson),
-      resumeBullets: parseJsonArray<{ text: string; profiles?: string[]; evidenceIds?: string[] }>(
-        e.resumeBulletsJson,
-      ),
+      resumeBullets: normalizeResumeBullets(e.resumeBulletsJson),
       companyContext: e.companyContext,
       verified: e.verified,
       approvedForCV: e.approvedForCV,

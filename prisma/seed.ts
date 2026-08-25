@@ -157,8 +157,19 @@ async function main() {
     data: {
       email: "roshan@theonlyrosh.com",
       name: "Roshan Najar",
+      isOperator: true,
+      onboardingStatus: "complete",
+      onboardingStep: "done",
+      completenessScore: 100,
       settings: {
-        create: {},
+        create: {
+          layoffDate: "2026-07-17",
+          targetRolesText: "UX Engineer, Product Designer, Design Engineer, UI Designer",
+          marketsJson: JSON.stringify(["Ireland", "Dublin"]),
+          primaryMarketLabel: "Ireland",
+          candidatePositioning:
+            "mid-level UX Engineer / Product Designer / Design Engineer / applied AI creative — NOT staff/principal/director",
+        },
       },
     },
   });

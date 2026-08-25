@@ -6,7 +6,8 @@ import { getPrimaryUser } from "@/lib/auth/user";
 export const dynamic = "force-dynamic";
 
 export default async function ProfilesPage() {
-  const primary = await getPrimaryUser();
+  const { requireOnboarded } = await import("@/lib/auth/onboarding-gate");
+  const primary = await requireOnboarded();
   const user = await prisma.user.findUnique({
     where: { id: primary.id },
     include: {

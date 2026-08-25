@@ -119,8 +119,13 @@ export function validateClaims(
   return { status, claims, blockedClaims, estimateWarnings };
 }
 
-export function buildResumeFileName(role: string, company: string, date = new Date()): string {
+export function buildResumeFileName(
+  role: string,
+  company: string,
+  date = new Date(),
+  personName = "Candidate",
+): string {
   const safe = (s: string) => s.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_|_$/g, "");
   const d = date.toISOString().slice(0, 10);
-  return `Roshan_Najar_${safe(role)}_${safe(company)}_${d}`;
+  return `${safe(personName)}_${safe(role)}_${safe(company)}_${d}`;
 }

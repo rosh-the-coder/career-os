@@ -172,28 +172,45 @@ export function composeExperience(opts: {
 }
 
 export function composeEducation(
-  _inventory: CareerInventory,
+  inventory: CareerInventory,
   opts?: { compress?: boolean },
-) {
+): import("./types").EducationResumeEntry[] {
   const compress = opts?.compress ?? false;
-  return [
-    {
-      dates: LOCKED_RESUME_DATES.edu_msc,
-      line: "MSc in Creative Digital Media and UX, Technological University Dublin, Dublin",
-      details: compress
-        ? undefined
-        : [
-            "Authoring Principles · Design Practice · VR & AR Applications · Information Modelling",
-            "Production & Prototyping · User Interaction Design · Major Project & Report",
-          ],
-    },
-    {
-      dates: LOCKED_RESUME_DATES.edu_iit,
-      line: "Executive PG in UI/UX, Indian Institute of Technology Roorkee, India",
-    },
-    {
-      dates: LOCKED_RESUME_DATES.edu_barch,
-      line: "Bachelor of Architecture, Manipal School of Architecture and Planning, Manipal, India",
-    },
-  ];
+
+  const fromNotes = inventory.experiences
+    .flatMap((e) => e.bullets)
+    .filter((b) => /\b(bachelor|master|msc|barch|degree|university|college|diploma)\b/i.test(b));
+
+  if (fromNotes.length) {
+    return fromNotes.slice(0, 3).map((line) => ({
+      dates: "",
+      line: line.replace(/^[-*•]\s*/, "").trim(),
+    }));
+  }
+
+  // Operator seed only — never shared with guest workspaces
+  if (inventory.isOperator) {
+    return [
+      {
+        dates: LOCKED_RESUME_DATES.edu_msc,
+        line: "MSc in Creative Digital Media and UX, Technological University Dublin, Dublin",
+        details: compress
+          ? undefined
+          : [
+              "Authoring Principles · Design Practice · VR & AR Applications · Information Modelling",
+              "Production & Prototyping · User Interaction Design · Major Project & Report",
+            ],
+      },
+      {
+        dates: LOCKED_RESUME_DATES.edu_iit,
+        line: "Executive PG in UI/UX, Indian Institute of Technology Roorkee, India",
+      },
+      {
+        dates: LOCKED_RESUME_DATES.edu_barch,
+        line: "Bachelor of Architecture, Manipal School of Architecture and Planning, Manipal, India",
+      },
+    ];
+  }
+
+  return [];
 }

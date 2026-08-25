@@ -65,6 +65,8 @@ export async function updateJobDescriptionAction(
   if (!description) return { ok: false, error: "Description required" };
 
   try {
+    const { assertOwnedJobId } = await import("@/lib/auth/ownership");
+    await assertOwnedJobId(jobId);
     await prisma.job.update({
       where: { id: jobId },
       data: {
@@ -92,10 +94,16 @@ export async function updateJobDescriptionAction(
 export async function generateResumeAction(formData: FormData) {
   const jobId = String(formData.get("jobId"));
   const pageLength = Number(formData.get("pageLength") ?? 1) === 2 ? 2 : 1;
-  await generateResumeForJob(jobId, pageLength);
+  try {
+    await generateResumeForJob(jobId, pageLength);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Resume generation failed";
+    console.error("[generateResumeAction]", msg);
+    redirect(`/jobs/${jobId}?error=${encodeURIComponent(msg.slice(0, 240))}`);
+  }
   revalidatePath(`/jobs/${jobId}`);
   revalidatePath("/resume-studio");
-  redirect(`/jobs/${jobId}`);
+  redirect(`/jobs/${jobId}?resume=1`);
 }
 
 export async function analyzeResumeKeywordsAction(formData: FormData): Promise<{ ok: boolean; error?: string }> {
@@ -224,6 +232,10 @@ export async function updateApplicationAction(formData: FormData) {
 
 export async function updateSettingsAction(formData: FormData) {
   const user = await getPrimaryUser();
+  const marketsRaw = String(formData.get("markets") ?? "").trim();
+  const markets = marketsRaw
+    ? marketsRaw.split(/[,;\n]/).map((s) => s.trim()).filter(Boolean)
+    : undefined;
   await prisma.settings.update({
     where: { userId: user.id },
     data: {
@@ -231,9 +243,53 @@ export async function updateSettingsAction(formData: FormData) {
       includeFallbackVideoRoles: formData.get("includeFallbackVideoRoles") === "on",
       salaryFloorSoft: formData.get("salaryFloorSoft") === "on",
       dailyBatchTarget: Number(formData.get("dailyBatchTarget") ?? 25),
+      ...(formData.has("location")
+        ? { location: String(formData.get("location") ?? "") }
+        : {}),
+      ...(formData.has("currentPermission")
+        ? { currentPermission: String(formData.get("currentPermission") ?? "") }
+        : {}),
+      ...(formData.has("permissionValidUntil")
+        ? { permissionValidUntil: String(formData.get("permissionValidUntil") ?? "") }
+        : {}),
+      ...(formData.has("permissionRenewableUntil")
+        ? { permissionRenewableUntil: String(formData.get("permissionRenewableUntil") ?? "") }
+        : {}),
+      ...(formData.has("contactEmail")
+        ? { contactEmail: String(formData.get("contactEmail") ?? "") }
+        : {}),
+      ...(formData.has("phone") ? { phone: String(formData.get("phone") ?? "") } : {}),
+      ...(formData.has("portfolioUrl")
+        ? { portfolioUrl: String(formData.get("portfolioUrl") ?? "") }
+        : {}),
+      ...(formData.has("githubUrl") ? { githubUrl: String(formData.get("githubUrl") ?? "") } : {}),
+      ...(formData.has("linkedinUrl")
+        ? { linkedinUrl: String(formData.get("linkedinUrl") ?? "") }
+        : {}),
+      ...(formData.has("targetRolesText")
+        ? { targetRolesText: String(formData.get("targetRolesText") ?? "") }
+        : {}),
+      ...(formData.has("excludedRolesText")
+        ? { excludedRolesText: String(formData.get("excludedRolesText") ?? "") }
+        : {}),
+      ...(formData.has("primaryMarketLabel")
+        ? { primaryMarketLabel: String(formData.get("primaryMarketLabel") ?? "") }
+        : {}),
+      ...(formData.has("candidatePositioning")
+        ? { candidatePositioning: String(formData.get("candidatePositioning") ?? "") }
+        : {}),
+      ...(markets ? { marketsJson: JSON.stringify(markets) } : {}),
+      ...(formData.has("maxDiscoversPerDay")
+        ? { maxDiscoversPerDay: Number(formData.get("maxDiscoversPerDay") ?? 3) }
+        : {}),
     },
   });
+  if (formData.has("name")) {
+    const name = String(formData.get("name") ?? "").trim();
+    if (name) await prisma.user.update({ where: { id: user.id }, data: { name } });
+  }
   revalidatePath("/settings");
+  revalidatePath("/onboarding");
 }
 
 export async function runDiscoveryAction(): Promise<{
@@ -246,6 +302,8 @@ export async function runDiscoveryAction(): Promise<{
   samples?: { title: string; company: string; score: number; category: string }[];
 }> {
   try {
+    const { assertDiscoverAllowed } = await import("@/lib/auth/quotas");
+    await assertDiscoverAllowed();
     const { runJobDiscovery } = await import("@/lib/jobs/discover");
     const result = await runJobDiscovery();
     revalidatePath("/dashboard");
@@ -268,6 +326,7 @@ export async function runDiscoveryAction(): Promise<{
 }
 
 export async function prepareResumePacksAction(formData: FormData) {
+  const user = await getPrimaryUser();
   const ids = formData.getAll("jobIds").map(String).filter(Boolean);
   if (!ids.length) {
     return {
@@ -283,7 +342,7 @@ export async function prepareResumePacksAction(formData: FormData) {
 
   for (const jobId of ids) {
     try {
-      const job = await prisma.job.findUnique({ where: { id: jobId } });
+      const job = await prisma.job.findFirst({ where: { id: jobId, userId: user.id } });
       if (!job || job.status === "rejected") {
         failed.push({ id: jobId, error: "Rejected or missing" });
         continue;
@@ -312,10 +371,11 @@ export async function prepareResumePacksAction(formData: FormData) {
 }
 
 export async function saveJobsAction(formData: FormData) {
+  const user = await getPrimaryUser();
   const ids = formData.getAll("jobIds").map(String).filter(Boolean);
   if (ids.length) {
     await prisma.job.updateMany({
-      where: { id: { in: ids }, NOT: { status: "rejected" } },
+      where: { id: { in: ids }, userId: user.id, NOT: { status: "rejected" } },
       data: { status: "saved" },
     });
   }

@@ -172,11 +172,21 @@ export function composeResumeV3(input: ComposeResumeV3Input): ResumeContentV3 {
     { label: "GitHub", url: input.inventory.settings.githubUrl },
   ].filter((l) => l.url);
 
-  const contactLine = `County Dublin, Ireland | ${input.inventory.settings.phone} | ${input.inventory.settings.contactEmail}`;
+  const location = input.inventory.settings.location?.trim() || "Location on file";
+  const contactLine = `${location} | ${input.inventory.settings.phone || ""} | ${input.inventory.settings.contactEmail}`.replace(/\|\s*\|/g, "|").trim();
 
   const engineeringScores: Record<string, number> = {};
   for (const e of intelligence.experiences) engineeringScores[e.company] = e.engineeringScore;
   for (const p of intelligence.projects) engineeringScores[p.projectKey] = p.engineeringScore;
+
+  const sectionOrder = [
+    ...policy.sectionOrder.filter((s) => {
+      if (s === "selectedProjects") return selectedProjects.length > 0;
+      if (s === "education") return education.length > 0;
+      if (s === "technicalStack") return Boolean(technicalStack?.length);
+      return true;
+    }),
+  ];
 
   const draft: ResumeContentV3 = {
     schemaVersion: RESUME_SCHEMA_V3,
@@ -198,7 +208,7 @@ export function composeResumeV3(input: ComposeResumeV3Input): ResumeContentV3 {
     experience,
     education,
     technicalStack,
-    sectionOrder: policy.sectionOrder,
+    sectionOrder,
     evidenceMap: {},
     validation: {
       status: "passed",

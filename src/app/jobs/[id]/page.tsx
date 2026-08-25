@@ -4,7 +4,8 @@ import { generateResumeAction, recordApplicationAction, rescoreJobAction } from 
 import { CvKeywordFit } from "@/components/cv-keyword-fit";
 import { JobDescriptionEditor } from "@/components/job-description-editor";
 import { EstimateTooltip, PageHeader, Panel, ScoreBadge, StatusPill } from "@/components/ui";
-import { prisma } from "@/lib/db/prisma";
+import { requireOwnedJob } from "@/lib/auth/ownership";
+import { requireOnboarded } from "@/lib/auth/onboarding-gate";
 import { computeParseConfidence, isLlmScored } from "@/lib/jobs/jd-meta";
 import { parseOptimizeCache } from "@/lib/resume/ats-optimize";
 import { SCORE_WEIGHTS } from "@/lib/types";
@@ -12,14 +13,22 @@ import { parseJsonArray } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-export default async function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function JobDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string; resume?: string }>;
+}) {
+  await requireOnboarded();
   const { id } = await params;
-  const job = await prisma.job.findUnique({
-    where: { id },
-    include: { score: { include: { profile: true } }, resumeVersions: { orderBy: { createdAt: "desc" } } },
-  });
-  if (!job) notFound();
-
+  const sp = await searchParams;
+  let job;
+  try {
+    ({ job } = await requireOwnedJob(id));
+  } catch {
+    notFound();
+  }
   const softFlags = parseJsonArray<{ code: string; message: string; severity: string }>(job.softFlagsJson);
   const strengths = job.score ? parseJsonArray<string>(job.score.strengthsJson) : [];
   const gaps = job.score ? parseJsonArray<string>(job.score.gapsJson) : [];
@@ -53,6 +62,18 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
           </div>
         }
       />
+
+      {sp.error ? (
+        <Panel className="mb-6 border-danger/40">
+          <div className="text-sm font-medium text-danger">Couldn’t generate resume</div>
+          <p className="mt-1 text-sm text-ink-muted">{sp.error}</p>
+        </Panel>
+      ) : null}
+      {sp.resume === "1" ? (
+        <Panel className="mb-6 border-accent/30">
+          <p className="text-sm text-ink">Resume generated — download DOCX/PDF below or open Resume Studio.</p>
+        </Panel>
+      ) : null}
 
       {rateLimitFlag ? (
         <Panel className="mb-6 border-warn/40">

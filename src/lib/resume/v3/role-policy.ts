@@ -254,16 +254,62 @@ export const ROLE_POLICIES: Record<string, RolePolicy> = {
     prohibitedClaims: GLOBAL_PROHIBITED,
     projectsFirst: false,
   },
+  /** Guest / multi-niche inventory — title comes from the job, not a design default. */
+  general: {
+    key: "general",
+    cvTitle: "Professional",
+    positioning:
+      "Evidence-grounded CV composed from the candidate’s imported experience and skills, tailored to the target role.",
+    sectionOrder: ATS_SAFE_ORDER_EXPERIENCE,
+    preferredProjectKeys: [],
+    skillPriority: [
+      "Customer Service",
+      "Communication",
+      "Cash Handling",
+      "Till Work",
+      "Stock Handling",
+      "Inventory Checks",
+      "Team Collaboration",
+      "Time Management",
+      "Food Preparation",
+      "Hygiene Standards",
+    ],
+    experiencePriorityThemes: [
+      "customer",
+      "retail",
+      "sales",
+      "hospitality",
+      "service",
+      "stock",
+      "cook",
+      "kitchen",
+      "event",
+      "operations",
+    ],
+    prohibitedClaims: GLOBAL_PROHIBITED,
+    projectsFirst: false,
+  },
 };
 
 export function getRolePolicy(profileKey: string): RolePolicy {
-  return ROLE_POLICIES[profileKey] ?? ROLE_POLICIES.ux_engineer;
+  return ROLE_POLICIES[profileKey] ?? ROLE_POLICIES.general;
 }
 
 /** Pick CV title from policy + JD terminology (no fabrication). */
 export function resolveCvTitle(profileKey: string, jobTitle: string): string {
   const policy = getRolePolicy(profileKey);
   const jt = jobTitle.toLowerCase();
+  const cleanedJob = jobTitle
+    .replace(/\s*[|–—•].*$/, "")
+    .replace(/\s*\(.*?\)\s*/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // General / unknown profiles: use the job title so hospitality ≠ “UX Engineer”
+  if (profileKey === "general" || !ROLE_POLICIES[profileKey]) {
+    if (cleanedJob.length >= 2 && cleanedJob.length <= 80) return cleanedJob;
+    return "Professional";
+  }
 
   if (profileKey === "ai_engineer" || profileKey === "applied_ai") {
     if (/\bai engineer\b/.test(jt)) return "AI Engineer";
@@ -275,6 +321,14 @@ export function resolveCvTitle(profileKey: string, jobTitle: string): string {
   if (policy.cvTitleAliases?.length) {
     for (const alias of policy.cvTitleAliases) {
       if (jt.includes(alias.toLowerCase())) return alias;
+    }
+  }
+
+  // If JD title clearly matches a known alias of this policy family, prefer JD wording
+  if (cleanedJob.length >= 2 && cleanedJob.length <= 80) {
+    const policyWords = policy.cvTitle.toLowerCase().split(/\s+/);
+    if (policyWords.every((w) => w.length < 3 || jt.includes(w))) {
+      return cleanedJob;
     }
   }
 

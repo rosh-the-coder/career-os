@@ -54,3 +54,4 @@ next-env.d.ts
 /case-study/app/.vite/
 /case-study/capture/raw/
 /case-study/capture/tmp/
+.env*

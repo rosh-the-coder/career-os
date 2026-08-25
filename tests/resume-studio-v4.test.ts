@@ -10,6 +10,7 @@ import type { ResumeContentV3 } from "@/lib/resume/v3/types";
 function minimalInventory(): CareerInventory {
   return {
     userId: "u1",
+    isOperator: true,
     name: "Roshan Najar",
     settings: {
       location: "Dublin, Ireland",

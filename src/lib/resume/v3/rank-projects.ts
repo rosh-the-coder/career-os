@@ -3,6 +3,7 @@
  */
 
 import { PROJECT_RANK_WEIGHTS } from "@/lib/types";
+import { eligibleProjects } from "./cv-eligibility";
 import { formatLockedOrRange } from "./date-format";
 import type { CareerInventory, LoadedProject } from "./load-career-profile";
 import { getRolePolicy } from "./role-policy";
@@ -46,9 +47,7 @@ export function rankProjects(opts: {
   const policy = getRolePolicy(opts.profileKey);
   const profile = opts.inventory.profiles.find((p) => p.key === opts.profileKey);
   const evidenceOrder = profile?.evidenceOrder ?? [];
-  const eligible = opts.inventory.projects.filter(
-    (p) => p.approvedForCV && p.verified && !/academic only/i.test(p.type),
-  );
+  const eligible = eligibleProjects(opts.inventory);
 
   const ranked = eligible.map((p) => {
     const preferredIdx = policy.preferredProjectKeys.indexOf(p.key);

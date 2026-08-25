@@ -52,6 +52,19 @@ export interface ScoringContext {
   projects: ScoringProject[];
   evidence: ScoringEvidence[];
   defaultProfileKey?: string;
+  /** Candidate brief for LLM judge — never hardcode a person. */
+  candidate?: {
+    name: string;
+    location: string;
+    permission: string;
+    permissionValidUntil: string;
+    permissionRenewableUntil: string;
+    salaryFloorEur: number;
+    positioning: string;
+    canWorkFullTimeNow: boolean;
+  };
+  /** Resolved BYOK / operator env keys for LLM calls. */
+  llmKeys?: import("@/lib/byok/keys").ResolvedKeys;
 }
 
 function tokenize(text: string): string[] {

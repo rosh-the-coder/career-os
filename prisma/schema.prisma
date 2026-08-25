@@ -9,22 +9,35 @@ datasource db {
 }
 
 model User {
-  id          String   @id @default(cuid())
-  email       String   @unique
-  name        String
-  authUserId  String?  @unique
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  email              String   @unique
+  name               String
+  authUserId         String?  @unique
+  age                Int?
+  isOperator         Boolean  @default(false)
+  onboardingStatus   String   @default("pending") // pending | in_progress | complete
+  onboardingStep     String   @default("basics") // basics | resumes | keys | questions | done
+  completenessScore  Int      @default(0)
+  lastDiscoverAt     DateTime?
+  discoverCountDay   Int      @default(0)
+  discoverDayKey     String   @default("") // yyyy-mm-dd UTC
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
-  settings       Settings?
-  careerProfiles CareerProfile[]
-  experiences    Experience[]
-  projects       Project[]
-  skills         Skill[]
-  evidenceItems  EvidenceItem[]
-  jobs           Job[]
-  applications   Application[]
-  resumeVersions ResumeVersion[]
+  settings           Settings?
+  careerProfiles     CareerProfile[]
+  experiences        Experience[]
+  projects           Project[]
+  skills             Skill[]
+  evidenceItems      EvidenceItem[]
+  jobs               Job[]
+  applications       Application[]
+  resumeVersions     ResumeVersion[]
+  apiKeys            UserApiKey[]
+  invitesCreated     Invite[]           @relation("InvitesCreated")
+  uploadedResumes    UploadedResume[]
+  careerHistoryDraft CareerHistoryDraft?
+  onboardingAnswers  OnboardingAnswer[]
 }
 
 model Settings {
@@ -55,7 +68,95 @@ model Settings {
   dailyBatchTarget           Int     @default(25)
   noticePeriod               String  @default("Immediate")
   employmentStatus           String  @default("between_roles")
-  layoffDate                 String  @default("2026-07-17")
+  layoffDate                 String  @default("")
+  /** Comma/newline title keywords for Discover (e.g. UX Engineer, Product Designer). */
+  targetRolesText            String  @default("")
+  /** Markets / geos for discovery ranking (JSON string array). */
+  marketsJson                String  @default("[]")
+  /** Primary market label used like ireland_core (e.g. Ireland, United States). */
+  primaryMarketLabel         String  @default("")
+  /** Freeform positioning line for LLM judge brief. */
+  candidatePositioning       String  @default("")
+  maxDiscoversPerDay         Int     @default(3)
+  /** Roles / patterns the user wants Discover to deprioritize or skip. */
+  excludedRolesText          String  @default("")
+  /** JSON checklist for first-run: { profile, markets, eligibility, ai, firstJob, firstResume, firstApp } */
+  setupChecklistJson         String  @default("{}")
+}
+
+model UserApiKey {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider  String // groq | gemini | openai | adzuna_app_id | adzuna_app_key | brave | serpapi
+  ciphertext String
+  iv        String
+  tag       String
+  lastFour  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, provider])
+}
+
+model Invite {
+  id          String    @id @default(cuid())
+  email       String
+  token       String    @unique
+  createdById String
+  createdBy   User      @relation("InvitesCreated", fields: [createdById], references: [id], onDelete: Cascade)
+  usedAt      DateTime?
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+
+  @@index([email])
+}
+
+model UploadedResume {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileName    String
+  mimeType    String   @default("text/plain")
+  textContent String
+  byteSize    Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model CareerHistoryDraft {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  markdown   String
+  parsedJson String   @default("{}")
+  reviewed   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model OnboardingAnswer {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slotKey   String
+  question  String
+  answer    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, slotKey])
+}
+
+model AccessRequest {
+  id          String   @id @default(cuid())
+  email       String
+  firstName   String
+  searchingFor String  @default("")
+  note        String   @default("")
+  status      String   @default("pending") // pending | invited | dismissed
+  createdAt   DateTime @default(now())
+
+  @@index([email])
 }
 
 model CareerProfile {
