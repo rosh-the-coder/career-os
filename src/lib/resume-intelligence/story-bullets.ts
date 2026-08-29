@@ -41,7 +41,7 @@ export const CURATED_PROJECT_BULLETS: Record<
   ],
   redvelvetvault: [
     {
-      text: "Designed a React and TypeScript product surface for interactive adult entertainment with Firebase-backed auth, content delivery and subscription flows.",
+      text: "Designed a React and TypeScript product surface for a virtual art-gallery platform with Firebase-backed auth, content delivery and subscription flows.",
       profiles: ["*"],
     },
     {

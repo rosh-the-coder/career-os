@@ -57,6 +57,8 @@ const GLOBAL_PROHIBITED: RegExp[] = [
   /saas revenue/i,
   /via layoff/i,
   /without inventing unverified metrics/i,
+  /interactive adult entertainment/i,
+  /\badult entertainment\b/i,
 ];
 
 export const ROLE_POLICIES: Record<string, RolePolicy> = {
