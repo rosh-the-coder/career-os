@@ -39,6 +39,10 @@ describe("general / guest CV path", () => {
     expect(getRolePolicy("unknown_niche").key).toBe("general");
   });
 
+  it("uses AI software/developer JD titles for applied_ai exports", () => {
+    expect(resolveCvTitle("applied_ai", "AI Software Developer")).toBe("AI Software Developer");
+  });
+
   it("filters markdown section headers mistaken for jobs", () => {
     expect(isJunkExperience(exp({ company: "Career summary", umbrellaTitle: "Career summary" }))).toBe(true);
     expect(isJunkExperience(exp({ company: "TESCO Express", umbrellaTitle: "Sales Assistant" }))).toBe(false);

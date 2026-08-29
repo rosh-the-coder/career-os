@@ -102,6 +102,31 @@ MSc TU Dublin
     expect(check.ok).toBe(true);
   });
 
+  it("validates expected professional title instead of hardcoded AI Engineer", () => {
+    const text = `${HEADER.replace("UX Engineer", "AI Software Developer")}
+PROFILE
+Applied AI builder.
+SKILLS
+Python · TypeScript
+SELECTED PROJECTS
+Aethelgard
+PROFESSIONAL EXPERIENCE
+Independent
+EDUCATION
+MSc
+`;
+    const check = validateExportedResumeText(text, {
+      expectedProfessionalTitle: "AI Software Developer",
+      requireTechnicalStack: false,
+      requireAethelgard: false,
+      requireCareerOs: false,
+      expectExperienceBeforeProjects: true,
+    });
+    expect(check.ok).toBe(false);
+    expect(check.errors.some((e) => /Section order broken/i.test(e))).toBe(true);
+    expect(check.errors.some((e) => /Missing AI Engineer/i.test(e))).toBe(false);
+  });
+
   it("follows composed sectionOrder over the profile default", () => {
     const opts = resumeExportValidationOpts({
       profileKey: "ux_engineer",

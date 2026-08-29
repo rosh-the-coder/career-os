@@ -50,7 +50,7 @@ export function resumeExportValidationOpts(input: {
     if (exp >= 0 && proj >= 0) experienceFirst = exp < proj;
   }
   return {
-    requireAiEngineerTitle: aiLike,
+    requireAiEngineerTitle: false,
     requireTechnicalStack: input.pageLength === 2 && aiLike,
     requireRedVelvetVault: input.pageLength === 2 && aiLike,
     requireAethelgard: aiLike,
@@ -65,6 +65,8 @@ export function validateExportedResumeText(
   opts: {
     /** Display name that must appear in the export (defaults to operator seed name). */
     candidateName?: string;
+    /** When set, the export must include this header title (not a hardcoded "AI Engineer"). */
+    expectedProfessionalTitle?: string;
     requireTechnicalStack?: boolean;
     requireRedVelvetVault?: boolean;
     requireAethelgard?: boolean;
@@ -87,6 +89,14 @@ export function validateExportedResumeText(
   }
   if (opts.requireAiEngineerTitle && !/AI Engineer/i.test(text)) {
     errors.push("Missing AI Engineer title");
+  }
+
+  const expectedTitle = opts.expectedProfessionalTitle?.trim();
+  if (expectedTitle) {
+    const titleRe = new RegExp(escapeRegExp(expectedTitle), "i");
+    if (!titleRe.test(text)) {
+      errors.push(`Missing professional title (${expectedTitle})`);
+    }
   }
 
   for (const h of REQUIRED_HEADINGS) {

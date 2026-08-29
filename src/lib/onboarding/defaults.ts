@@ -40,6 +40,6 @@ export function slugifyPersonName(name: string): string {
     .split(/\s+/)
     .map((p) => p.replace(/[^a-zA-Z0-9]+/g, ""))
     .filter(Boolean);
-  if (!parts.length) return "Candidate";
+  if (!parts.length) return "Resume";
   return parts.join("_");
 }

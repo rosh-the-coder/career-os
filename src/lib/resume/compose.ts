@@ -119,13 +119,25 @@ export function validateClaims(
   return { status, claims, blockedClaims, estimateWarnings };
 }
 
-export function buildResumeFileName(
-  role: string,
-  company: string,
-  date = new Date(),
-  personName = "Candidate",
-): string {
+export function buildResumeFileName(opts: {
+  personName: string;
+  role: string;
+  company: string;
+  pageLength?: 1 | 2;
+  date?: Date;
+  /** When regenerating for the same job + page length, pass 2+ for `_v2` suffix. */
+  versionIndex?: number;
+}): string {
   const safe = (s: string) => s.replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_|_$/g, "");
-  const d = date.toISOString().slice(0, 10);
-  return `${safe(personName)}_${safe(role)}_${safe(company)}_${d}`;
+  const name = safe(opts.personName) || "Resume";
+  const d = (opts.date ?? new Date()).toISOString().slice(0, 10);
+  const parts = [name, safe(opts.role), safe(opts.company)];
+  if (opts.pageLength === 2) parts.push("2page");
+  else if (opts.pageLength === 1) parts.push("1page");
+  parts.push(d);
+  let base = parts.filter(Boolean).join("_");
+  if (opts.versionIndex && opts.versionIndex > 1) {
+    base += `_v${opts.versionIndex}`;
+  }
+  return base;
 }

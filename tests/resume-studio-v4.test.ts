@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { composeDocument, compositionToMarkdown } from "@/lib/resume-studio/composition/compose-document";
+import {
+  resumeExportValidationOpts,
+  validateExportedResumeText,
+} from "@/lib/resume/v3/export-validation";
+import {
+  composeDocument,
+  compositionToMarkdown,
+} from "@/lib/resume-studio/composition/compose-document";
 import { heuristicCritique } from "@/lib/resume-studio/critic/run-resume-critic";
 import { exportCompositionPdf, runVisualHeuristics } from "@/lib/resume-studio/export";
 import { getTheme, listReadyThemes } from "@/lib/resume-studio/themes";
@@ -285,6 +292,35 @@ describe("Resume Studio V4", () => {
     expect(md).toMatch(/Two Blokes Trading/);
     expect(md).toMatch(/2\.9K/);
     expect(md).not.toMatch(/2019\s*[–—-]\s*2019/);
+  });
+
+  it("passes V4 export validation for applied_ai + AI Software Developer (WorldQuant-style)", () => {
+    const inv = minimalInventory();
+    inv.profiles[0] = { ...inv.profiles[0]!, key: "applied_ai", name: "Applied AI / Automation" };
+    const content = composeResumeV3({
+      inventory: inv,
+      jobId: "worldquant-test",
+      jobTitle: "AI Software Developer",
+      company: "WorldQuant",
+      description: "Python C++ AI software developer quantitative research",
+      profileKey: "applied_ai",
+      pageLength: 1,
+    });
+    expect(content.header.professionalTitle).toBe("AI Software Developer");
+    const doc = composeDocument(content, "arthur-cox");
+    const md = compositionToMarkdown(doc);
+    const check = validateExportedResumeText(md, {
+      ...resumeExportValidationOpts({
+        profileKey: content.target.profileKey,
+        pageLength: 1,
+        sectionOrder: content.sectionOrder,
+      }),
+      candidateName: content.header.name,
+      expectedProfessionalTitle: content.header.professionalTitle,
+    });
+    expect(check.errors).toEqual([]);
+    expect(check.ok).toBe(true);
+    expect(md).not.toMatch(/Missing AI Engineer/i);
   });
 
   it("PDF export returns a buffer and critic heuristic scores", async () => {

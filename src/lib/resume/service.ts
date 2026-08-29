@@ -2,6 +2,7 @@ import path from "path";
 import os from "os";
 import { prisma } from "@/lib/db/prisma";
 import { buildResumeFileName, validateClaims } from "@/lib/resume/compose";
+import { slugifyPersonName } from "@/lib/onboarding/defaults";
 import { generateDocxAndPdf, type AtsResumeContent } from "@/lib/resume/export-docx";
 import { atsToMarkdown, buildReferenceAtsContent } from "@/lib/resume/reference-templates";
 import {
@@ -64,6 +65,25 @@ async function loadEvidenceBundle(userId: string, markdown?: string) {
   return { evidence, evidenceTexts, estimateLabels };
 }
 
+async function resolveResumeFileBase(opts: {
+  jobId: string;
+  personName: string;
+  role: string;
+  company: string;
+  pageLength: 1 | 2;
+}): Promise<string> {
+  const prior = await prisma.resumeVersion.count({
+    where: { jobId: opts.jobId, pageLength: opts.pageLength },
+  });
+  return buildResumeFileName({
+    personName: slugifyPersonName(opts.personName),
+    role: opts.role,
+    company: opts.company,
+    pageLength: opts.pageLength,
+    versionIndex: prior + 1,
+  });
+}
+
 export async function persistAtsResumeVersion(opts: {
   userId: string;
   jobId: string;
@@ -98,6 +118,7 @@ export async function persistAtsResumeVersion(opts: {
           sectionOrder: opts.contentV3.sectionOrder,
         }),
         candidateName: opts.personName ?? opts.contentV3.header.name,
+        expectedProfessionalTitle: opts.contentV3.header.professionalTitle,
       },
     );
     if (!exportCheck.ok) {
@@ -115,7 +136,15 @@ export async function persistAtsResumeVersion(opts: {
     );
   }
 
-  const fileBase = `${buildResumeFileName(opts.profileName.replace(/\s+/g, "_"), opts.company, new Date(), opts.personName ?? "Candidate")}_${Date.now().toString(36)}`;
+  const personName = opts.personName ?? opts.contentV3?.header.name ?? "Resume";
+  const role = opts.contentV3?.header.professionalTitle ?? opts.profileName;
+  const fileBase = await resolveResumeFileBase({
+    jobId: opts.jobId,
+    personName,
+    role,
+    company: opts.company,
+    pageLength: opts.pageLength,
+  });
   const outDir = exportDir();
   let docxPath: string;
   let pdfPath: string | null;
@@ -242,6 +271,7 @@ export async function generateResumeForJob(jobId: string, pageLength: 1 | 2 = 1)
     profileName: profile.name,
     company: job.company,
     pageLength,
+    personName: user.name,
     ats,
     evidenceTitles: [
       "Reference CV corpus",
@@ -326,6 +356,7 @@ async function generateResumeForJobV4(
         sectionOrder: contentV3.sectionOrder,
       }),
       candidateName: contentV3.header.name || inventory.name,
+      expectedProfessionalTitle: contentV3.header.professionalTitle,
     },
   );
   if (!exportCheck.ok) {
@@ -337,7 +368,13 @@ async function generateResumeForJobV4(
   const draft = atsContentToDraft(ats);
   const validation = legacyValidationFromV3(contentV3.validation);
 
-  const fileBase = `${buildResumeFileName(contentV3.header.professionalTitle.replace(/\s+/g, "_"), job.company)}_${Date.now().toString(36)}`;
+  const fileBase = await resolveResumeFileBase({
+    jobId: job.id,
+    personName: contentV3.header.name,
+    role: contentV3.header.professionalTitle,
+    company: job.company,
+    pageLength,
+  });
   const outDir = exportDir();
   const files = await generateCompositionExports(composition, outDir, fileBase);
   const visualFlags = runVisualHeuristics(composition, files.pageCount);
@@ -459,6 +496,7 @@ async function generateResumeForJobV3(
     profileName: contentV3.header.professionalTitle,
     company: job.company,
     pageLength,
+    personName: contentV3.header.name,
     ats,
     evidenceTitles,
     evidenceTexts: [], // V3 validated externally already

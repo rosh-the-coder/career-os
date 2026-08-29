@@ -317,6 +317,14 @@ export function resolveCvTitle(profileKey: string, jobTitle: string): string {
     if (/\bai engineer\b/.test(jt)) return "AI Engineer";
     if (/\bautomation\b/.test(jt)) return "AI Automation Engineer";
     if (/\bapplied ai\b/.test(jt)) return "Applied AI Engineer";
+    if (
+      /\bai\b/.test(jt) &&
+      /\b(developer|engineer|software|programmer|researcher)\b/.test(jt) &&
+      cleanedJob.length >= 2 &&
+      cleanedJob.length <= 80
+    ) {
+      return cleanedJob;
+    }
     if (profileKey === "ai_engineer") return "AI Engineer";
   }
 
