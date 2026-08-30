@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveCvTitle, getRolePolicy } from "@/lib/resume/v3/role-policy";
+import { resolveCvTitle, getRolePolicy, cleanJobTitleForCv } from "@/lib/resume/v3/role-policy";
 import { isJunkExperience, eligibleExperiences } from "@/lib/resume/v3/cv-eligibility";
 import type { CareerInventory, LoadedExperience } from "@/lib/resume/v3/load-career-profile";
 
@@ -41,6 +41,14 @@ describe("general / guest CV path", () => {
 
   it("uses AI software/developer JD titles for applied_ai exports", () => {
     expect(resolveCvTitle("applied_ai", "AI Software Developer")).toBe("AI Software Developer");
+  });
+
+  it("strips internal team suffixes from JD titles (Restream-style)", () => {
+    expect(resolveCvTitle("design_engineer", "Design Engineer - AI Clips Team")).toBe(
+      "Design Engineer",
+    );
+    expect(cleanJobTitleForCv("Design Engineer - AI Clips Team")).toBe("Design Engineer");
+    expect(cleanJobTitleForCv("AI Engineer (x2) – Legal Innovation Team")).toBe("AI Engineer");
   });
 
   it("filters markdown section headers mistaken for jobs", () => {

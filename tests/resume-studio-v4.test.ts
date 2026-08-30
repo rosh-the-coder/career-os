@@ -294,6 +294,24 @@ describe("Resume Studio V4", () => {
     expect(md).not.toMatch(/2019\s*[–—-]\s*2019/);
   });
 
+  it("strips team suffix from JD title on Restream-style design engineer roles", () => {
+    const content = composeResumeV3({
+      inventory: minimalInventory(),
+      jobId: "restream-test",
+      jobTitle: "Design Engineer - AI Clips Team",
+      company: "Restream",
+      description: "React TypeScript Figma design systems",
+      profileKey: "design_engineer",
+      pageLength: 1,
+    });
+    expect(content.header.professionalTitle).toBe("Design Engineer");
+    expect(content.summary.text).toMatch(/^Design Engineer with hands-on experience/);
+    expect(content.summary.text).not.toMatch(/AI Clips Team/i);
+    const md = compositionToMarkdown(composeDocument(content, "arthur-cox"));
+    expect(md).toContain("Design Engineer\n");
+    expect(md).not.toMatch(/AI Clips Team/i);
+  });
+
   it("passes V4 export validation for applied_ai + AI Software Developer (WorldQuant-style)", () => {
     const inv = minimalInventory();
     inv.profiles[0] = { ...inv.profiles[0]!, key: "applied_ai", name: "Applied AI / Automation" };

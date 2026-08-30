@@ -297,15 +297,37 @@ export function getRolePolicy(profileKey: string): RolePolicy {
   return ROLE_POLICIES[profileKey] ?? ROLE_POLICIES.general;
 }
 
+/** Strip listing noise (team names, locations, headcount) — keep the hireable role title. */
+export function cleanJobTitleForCv(jobTitle: string): string {
+  let t = jobTitle.trim();
+  t = t.replace(/\s*[|–—•].*$/, "");
+  t = t.replace(/\s*\([^)]*\)\s*/g, " ");
+  t = t.replace(/\s+/g, " ").trim();
+
+  const hyphenSplit = t.match(/^(.+?)\s+[-–—]\s+(.+)$/);
+  if (!hyphenSplit) return t;
+
+  const left = hyphenSplit[1]!.trim();
+  const right = hyphenSplit[2]!.trim().toLowerCase();
+  const roleNoun =
+    /\b(engineer|developer|designer|manager|analyst|architect|specialist|lead|director|coordinator|assistant|intern|researcher|scientist|consultant|editor|producer|writer|operator|technician|administrator)\b/i;
+  const teamOrOrg =
+    /\b(team|group|squad|pod|division|department|unit|chapter|crew|studio|lab|org(?:anization)?|initiative|program|practice|vertical|function)\b/i;
+
+  if (!roleNoun.test(left)) return t;
+
+  if (teamOrOrg.test(right)) return left;
+
+  if (!roleNoun.test(right) && right.split(/\s+/).length <= 5) return left;
+
+  return t;
+}
+
 /** Pick CV title from policy + JD terminology (no fabrication). */
 export function resolveCvTitle(profileKey: string, jobTitle: string): string {
   const policy = getRolePolicy(profileKey);
-  const jt = jobTitle.toLowerCase();
-  const cleanedJob = jobTitle
-    .replace(/\s*[|–—•].*$/, "")
-    .replace(/\s*\(.*?\)\s*/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  const cleanedJob = cleanJobTitleForCv(jobTitle);
+  const jt = cleanedJob.toLowerCase();
 
   // General / unknown profiles: use the job title so hospitality ≠ “UX Engineer”
   if (profileKey === "general" || !ROLE_POLICIES[profileKey]) {
@@ -338,6 +360,9 @@ export function resolveCvTitle(profileKey: string, jobTitle: string): string {
   if (cleanedJob.length >= 2 && cleanedJob.length <= 80) {
     const policyWords = policy.cvTitle.toLowerCase().split(/\s+/);
     if (policyWords.every((w) => w.length < 3 || jt.includes(w))) {
+      const cleanedLower = cleanedJob.toLowerCase();
+      const policyLower = policy.cvTitle.toLowerCase();
+      if (cleanedLower === policyLower) return policy.cvTitle;
       return cleanedJob;
     }
   }
